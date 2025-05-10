@@ -1,15 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Copy } from "lucide-react"
+import { Check, Copy, Clock, Eye } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { vscDarkPlus, vs } from "react-syntax-highlighter/dist/esm/styles/prism"
+import { vs } from "react-syntax-highlighter/dist/esm/styles/prism"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useTheme } from "next-themes"
 
 interface Paste {
   id: string
@@ -27,7 +25,6 @@ interface ViewPasteProps {
 }
 
 export function ViewPaste({ paste }: ViewPasteProps) {
-  const { theme } = useTheme()
   const [copied, setCopied] = useState(false)
 
   const copyToClipboard = async () => {
@@ -44,57 +41,57 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   const expiresDate = paste.expiresAt ? new Date(paste.expiresAt) : null
 
   return (
-    <Card className="overflow-hidden bg-white shadow-sm dark:bg-card">
-      <CardHeader className="bg-slate-50 dark:bg-muted/50">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>{paste.title || "Untitled Paste"}</CardTitle>
+    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20">
+      <div className="border-b border-gray-100 bg-gray-50 p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{paste.title || "Untitled Snippet"}</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Created {formatDistanceToNow(createdDate, { addSuffix: true })}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="bg-white dark:bg-transparent">
-              {paste.language}
-            </Badge>
+            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">{paste.language}</Badge>
             {paste.viewLimit !== "unlimited" && (
-              <Badge variant="outline" className="bg-white dark:bg-transparent">
-                {paste.viewCount} / {paste.viewLimit} views
+              <Badge className="flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
+                <Eye className="h-3 w-3" />
+                {paste.viewCount} / {paste.viewLimit}
               </Badge>
             )}
             {expiresDate && (
-              <Badge variant="outline" className="bg-white dark:bg-transparent">
-                Expires: {formatDistanceToNow(expiresDate, { addSuffix: true })}
+              <Badge className="flex items-center gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200">
+                <Clock className="h-3 w-3" />
+                {formatDistanceToNow(expiresDate, { addSuffix: true })}
               </Badge>
             )}
           </div>
         </div>
-        <div className="text-sm text-muted-foreground">
-          Created {formatDistanceToNow(createdDate, { addSuffix: true })}
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-2 top-2 z-10 text-sky-500 hover:text-sky-600 hover:bg-slate-100 dark:hover:bg-muted"
-            onClick={copyToClipboard}
+      </div>
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-4 top-4 z-10 flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
+          onClick={copyToClipboard}
+        >
+          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Copied!" : "Copy"}
+        </Button>
+        <div className="max-h-[600px] overflow-auto">
+          <SyntaxHighlighter
+            language={paste.language === "plaintext" ? "text" : paste.language}
+            style={vs}
+            showLineNumbers
+            customStyle={{
+              margin: 0,
+              borderRadius: 0,
+              fontSize: "0.9rem",
+            }}
           >
-            {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
-            {copied ? "Copied!" : "Copy"}
-          </Button>
-          <div className="max-h-[600px] overflow-auto">
-            <SyntaxHighlighter
-              language={paste.language === "plaintext" ? "text" : paste.language}
-              style={theme === "dark" ? vscDarkPlus : vs}
-              showLineNumbers
-              customStyle={{
-                margin: 0,
-                borderRadius: 0,
-                fontSize: "0.9rem",
-              }}
-            >
-              {paste.content}
-            </SyntaxHighlighter>
-          </div>
+            {paste.content}
+          </SyntaxHighlighter>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

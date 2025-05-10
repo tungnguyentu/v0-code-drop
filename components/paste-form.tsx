@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card } from "@/components/ui/card"
 import { CodeEditor } from "@/components/code-editor"
 
 const LANGUAGE_OPTIONS = [
@@ -68,7 +67,6 @@ export function PasteForm() {
     setIsSubmitting(true)
 
     try {
-      // In a real app, this would call an API to create the paste
       const pasteId = await createPaste({
         title,
         content,
@@ -109,48 +107,75 @@ export function PasteForm() {
   return (
     <div>
       {pasteUrl ? (
-        <Card className="bg-white p-6 shadow-sm dark:bg-card">
-          <div className="mb-6 text-center">
-            <h3 className="mb-2 text-lg font-medium">Paste Created!</h3>
-            <p className="text-muted-foreground">Your paste has been created successfully. Share the link below:</p>
+        <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-md">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <Check className="h-8 w-8 text-emerald-600" />
+            </div>
+            <h3 className="mb-2 text-xl font-medium">Snippet Created!</h3>
+            <p className="text-gray-500">Your code snippet has been created successfully. Share the link below:</p>
           </div>
 
           <div className="mb-6 flex items-center gap-2">
-            <Input value={pasteUrl} readOnly className="font-mono text-sm" onClick={(e) => e.currentTarget.select()} />
-            <Button variant="outline" size="icon" onClick={copyToClipboard} className="flex-shrink-0">
+            <Input
+              value={pasteUrl}
+              readOnly
+              className="font-mono text-sm border-gray-200 bg-gray-50"
+              onClick={(e) => e.currentTarget.select()}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={copyToClipboard}
+              className="flex-shrink-0 border-gray-200 hover:bg-gray-100"
+            >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
 
           <div className="flex justify-center">
-            <Button onClick={createNewPaste} className="bg-sky-500 hover:bg-sky-600 text-white">
-              Create Another Paste
+            <Button
+              onClick={createNewPaste}
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+            >
+              Create Another Snippet
             </Button>
           </div>
-        </Card>
+        </div>
       ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <Label htmlFor="title">Title (optional)</Label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Label htmlFor="title" className="text-gray-700">
+              Title (optional)
+            </Label>
             <Input
               id="title"
-              placeholder="Untitled Paste"
+              placeholder="Untitled Snippet"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1"
+              className="mt-1.5 border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
             />
           </div>
 
-          <div className="mb-4">
-            <Label htmlFor="content">Content</Label>
-            <CodeEditor value={content} onChange={setContent} language={language} />
+          <div>
+            <Label htmlFor="content" className="text-gray-700">
+              Content
+            </Label>
+            <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
+              <CodeEditor value={content} onChange={setContent} language={language} />
+            </div>
           </div>
 
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             <div>
-              <Label htmlFor="language">Syntax Highlighting</Label>
+              <Label htmlFor="language" className="text-gray-700">
+                Syntax Highlighting
+              </Label>
               <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger id="language" className="mt-1">
+                <SelectTrigger
+                  id="language"
+                  className="mt-1.5 border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                >
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
                 <SelectContent>
@@ -164,9 +189,14 @@ export function PasteForm() {
             </div>
 
             <div>
-              <Label htmlFor="expiration">Expiration</Label>
+              <Label htmlFor="expiration" className="text-gray-700">
+                Expiration
+              </Label>
               <Select value={expiration} onValueChange={setExpiration}>
-                <SelectTrigger id="expiration" className="mt-1">
+                <SelectTrigger
+                  id="expiration"
+                  className="mt-1.5 border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                >
                   <SelectValue placeholder="Select expiration" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,9 +210,14 @@ export function PasteForm() {
             </div>
 
             <div>
-              <Label htmlFor="viewLimit">View Limit</Label>
+              <Label htmlFor="viewLimit" className="text-gray-700">
+                View Limit
+              </Label>
               <Select value={viewLimit} onValueChange={setViewLimit}>
-                <SelectTrigger id="viewLimit" className="mt-1">
+                <SelectTrigger
+                  id="viewLimit"
+                  className="mt-1.5 border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                >
                   <SelectValue placeholder="Select view limit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +233,7 @@ export function PasteForm() {
 
           <Button
             type="submit"
-            className="w-full bg-sky-500 hover:bg-sky-600 text-white"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
             disabled={!content || isSubmitting}
           >
             {isSubmitting ? (
@@ -207,7 +242,7 @@ export function PasteForm() {
                 Creating...
               </>
             ) : (
-              "Create Paste"
+              "Create Snippet"
             )}
           </Button>
         </form>

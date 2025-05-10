@@ -51,7 +51,10 @@ export function CodeEditor({ value, onChange, language, className }: CodeEditorP
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={handleKeyDown}
       placeholder="Paste your code or text here..."
-      className={cn("min-h-[300px] font-mono text-sm resize-none", className)}
+      className={cn(
+        "min-h-[300px] font-mono text-sm resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+        className,
+      )}
       spellCheck={false}
     />
   )
