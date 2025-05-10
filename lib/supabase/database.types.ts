@@ -38,6 +38,35 @@ export interface Database {
           view_count?: number
         }
       }
+      feedback: {
+        Row: {
+          id: string
+          type: string
+          message: string
+          email: string | null
+          created_at: string
+          status: string
+          is_read: boolean
+        }
+        Insert: {
+          id?: string
+          type: string
+          message: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
+        Update: {
+          id?: string
+          type?: string
+          message?: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
+      }
     }
   }
 }
