@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Loader2 } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, Loader2, Lock } from "lucide-react"
 import { createPaste } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CodeEditor } from "@/components/code-editor"
+import { Switch } from "@/components/ui/switch"
 
 const LANGUAGE_OPTIONS = [
   { value: "plaintext", label: "Plain Text" },
@@ -62,6 +63,11 @@ export function PasteForm() {
   const [pasteUrl, setPasteUrl] = useState("")
   const [copied, setCopied] = useState(false)
 
+  // Password protection
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false)
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -73,6 +79,7 @@ export function PasteForm() {
         language,
         expiration,
         viewLimit,
+        password: isPasswordProtected ? password : undefined,
       })
 
       // Generate a shareable URL
@@ -101,6 +108,8 @@ export function PasteForm() {
     setLanguage("plaintext")
     setExpiration("1d")
     setViewLimit("unlimited")
+    setIsPasswordProtected(false)
+    setPassword("")
     setPasteUrl("")
   }
 
@@ -132,6 +141,16 @@ export function PasteForm() {
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
+
+          {isPasswordProtected && (
+            <div className="mb-6 rounded-md bg-amber-50 p-4 text-amber-700 flex items-center">
+              <Lock className="h-5 w-5 mr-2 flex-shrink-0" />
+              <div>
+                <p className="font-medium">This snippet is password protected</p>
+                <p className="text-sm">Anyone with the link will need the password to view it</p>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-center">
             <Button
@@ -231,10 +250,53 @@ export function PasteForm() {
             </div>
           </div>
 
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Lock className="h-4 w-4 text-gray-500" />
+                <Label htmlFor="password-protection" className="text-gray-700 font-medium">
+                  Password Protection
+                </Label>
+              </div>
+              <Switch id="password-protection" checked={isPasswordProtected} onCheckedChange={setIsPasswordProtected} />
+            </div>
+
+            {isPasswordProtected && (
+              <div className="mt-4">
+                <Label htmlFor="password" className="text-gray-700">
+                  Set Password
+                </Label>
+                <div className="mt-1.5 relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter a secure password"
+                    className="border-gray-200 pr-10 focus:border-emerald-500 focus:ring-emerald-500"
+                    required={isPasswordProtected}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Anyone with the link will need this password to view the snippet
+                </p>
+              </div>
+            )}
+          </div>
+
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-            disabled={!content || isSubmitting}
+            disabled={!content || isSubmitting || (isPasswordProtected && !password)}
           >
             {isSubmitting ? (
               <>

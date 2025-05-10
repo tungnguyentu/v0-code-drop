@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { ViewPaste } from "@/components/view-paste"
+import { PasswordVerification } from "@/components/password-verification"
 import { getPasteById } from "@/app/actions"
 import { Logo } from "@/components/logo"
 import { Footer } from "@/components/footer"
@@ -33,7 +34,11 @@ export default async function PastePage({ params }: PastePageProps) {
 
         <main>
           <section className="mx-auto max-w-4xl">
-            <ViewPaste paste={paste} />
+            {paste.isProtected && !paste.content ? (
+              <PasswordVerification pasteId={id} title={paste.title} />
+            ) : (
+              <ViewPaste paste={paste} />
+            )}
           </section>
         </main>
 

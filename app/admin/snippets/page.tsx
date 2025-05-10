@@ -4,8 +4,9 @@ import { createServerClient } from "@/lib/supabase/server"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, ExternalLink } from "lucide-react"
+import { Eye, ExternalLink, Lock } from "lucide-react"
 import { DeleteSnippetButton } from "@/components/admin/delete-snippet-button"
+import { Badge } from "@/components/ui/badge"
 
 async function getSnippets() {
   const supabase = createServerClient()
@@ -52,7 +53,17 @@ export default async function AdminSnippetsPage() {
                   {snippets.map((snippet) => (
                     <tr key={snippet.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4 text-sm">{snippet.short_id}</td>
-                      <td className="py-3 px-4 text-sm font-medium">{snippet.title || "Untitled"}</td>
+                      <td className="py-3 px-4 text-sm font-medium">
+                        <div className="flex items-center gap-2">
+                          {snippet.title || "Untitled"}
+                          {snippet.is_protected && (
+                            <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              Protected
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 text-sm">{snippet.language}</td>
                       <td className="py-3 px-4 text-sm text-gray-500">
                         {formatDistanceToNow(new Date(snippet.created_at), { addSuffix: true })}

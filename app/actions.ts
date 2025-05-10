@@ -1,8 +1,10 @@
 "use server"
 
 import { nanoid } from "nanoid"
+import bcrypt from "bcryptjs"
 import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 
 interface CreatePasteParams {
   title: string
@@ -10,6 +12,7 @@ interface CreatePasteParams {
   language: string
   expiration: string
   viewLimit: string
+  password?: string
 }
 
 export async function createPaste({
@@ -18,6 +21,7 @@ export async function createPaste({
   language,
   expiration,
   viewLimit,
+  password,
 }: CreatePasteParams): Promise<string> {
   const supabase = createServerClient()
 
@@ -35,6 +39,16 @@ export async function createPaste({
     expiresAt = now.toISOString()
   }
 
+  // Handle password protection
+  let passwordHash = null
+  let isProtected = false
+
+  if (password && password.trim()) {
+    // Hash the password with bcrypt
+    passwordHash = await bcrypt.hash(password, 10)
+    isProtected = true
+  }
+
   // Create the paste in the database
   const { data, error } = await supabase
     .from("pastes")
@@ -46,6 +60,8 @@ export async function createPaste({
       expires_at: expiresAt,
       view_limit: viewLimit,
       view_count: 0,
+      password_hash: passwordHash,
+      is_protected: isProtected,
     })
     .select("short_id")
     .single()
@@ -83,6 +99,23 @@ export async function getPasteById(shortId: string) {
     return null
   }
 
+  // Check if the paste is password protected
+  if (paste.is_protected) {
+    // Check if the user has already verified the password for this paste
+    const cookieStore = cookies()
+    const verifiedPastes = cookieStore.get(`verified_paste_${shortId}`)?.value
+
+    if (!verifiedPastes) {
+      // Return limited info for password verification
+      return {
+        id: paste.short_id,
+        title: paste.title || "",
+        isProtected: true,
+        language: paste.language,
+      }
+    }
+  }
+
   // Check if view limit has been reached
   if (paste.view_limit !== "unlimited") {
     const newViewCount = paste.view_count + 1
@@ -109,7 +142,36 @@ export async function getPasteById(shortId: string) {
     expiresAt: paste.expires_at,
     viewLimit: paste.view_limit,
     viewCount: paste.view_count,
+    isProtected: paste.is_protected,
   }
+}
+
+export async function verifyPastePassword(shortId: string, password: string): Promise<boolean> {
+  const supabase = createServerClient()
+
+  // Query for the paste
+  const { data: pastes, error } = await supabase.from("pastes").select("password_hash").eq("short_id", shortId)
+
+  if (error || !pastes || pastes.length === 0) {
+    return false
+  }
+
+  const paste = pastes[0]
+
+  // Verify the password
+  const isValid = await bcrypt.compare(password, paste.password_hash || "")
+
+  if (isValid) {
+    // Set a cookie to remember that this paste has been verified
+    cookies().set(`verified_paste_${shortId}`, "true", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: "/",
+    })
+  }
+
+  return isValid
 }
 
 // Add a helper function to clean up expired pastes
