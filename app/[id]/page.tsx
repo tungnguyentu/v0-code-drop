@@ -13,6 +13,11 @@ interface PastePageProps {
 export default async function PastePage({ params }: PastePageProps) {
   const { id } = params
 
+  // Skip fetching for known routes that aren't pastes
+  if (id === "admin") {
+    notFound()
+  }
+
   const paste = await getPasteById(id)
 
   if (!paste) {

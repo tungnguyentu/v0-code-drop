@@ -62,12 +62,19 @@ export async function getPasteById(shortId: string) {
   const supabase = createServerClient()
 
   // Query for the paste
-  const { data: paste, error } = await supabase.from("pastes").select("*").eq("short_id", shortId).single()
+  const { data: pastes, error } = await supabase.from("pastes").select("*").eq("short_id", shortId)
 
-  if (error || !paste) {
+  if (error) {
     console.error("Error fetching paste:", error)
     return null
   }
+
+  // If no paste found, return null
+  if (!pastes || pastes.length === 0) {
+    return null
+  }
+
+  const paste = pastes[0]
 
   // Check if paste has expired
   if (paste.expires_at && new Date(paste.expires_at) < new Date()) {
