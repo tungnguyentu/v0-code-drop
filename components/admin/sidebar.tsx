@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { BarChart3, FileCode, MessageSquare, LogOut, Menu, X } from "lucide-react"
+import { BarChart3, FileCode, MessageSquare, PieChart, LogOut, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
 
@@ -12,6 +12,11 @@ const navItems = [
     name: "Dashboard",
     href: "/admin",
     icon: BarChart3,
+  },
+  {
+    name: "Analytics",
+    href: "/admin/analytics",
+    icon: PieChart,
   },
   {
     name: "Snippets",

@@ -38,6 +38,64 @@ export interface Database {
           view_count?: number
         }
       }
+      admin_sessions: {
+        Row: {
+          id: string
+          token: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          token: string
+          expires_at: string
+        }
+        Update: {
+          id?: string
+          token?: string
+          expires_at?: string
+        }
+      }
+      feedback: {
+        Row: {
+          id: string
+          type: string
+          message: string
+          email: string | null
+          created_at: string
+          status: string
+          is_read: boolean
+        }
+        Insert: {
+          id?: string
+          type: string
+          message: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
+        Update: {
+          id?: string
+          type?: string
+          message?: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
