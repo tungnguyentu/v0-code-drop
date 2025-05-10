@@ -1,5 +1,6 @@
 import { PasteForm } from "@/components/paste-form"
 import { Logo } from "@/components/logo"
+import { Footer } from "@/components/footer"
 
 export default function Home() {
   return (
@@ -20,9 +21,7 @@ export default function Home() {
           </section>
         </main>
 
-        <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} Codin. Share code, not complexity.</p>
-        </footer>
+        <Footer />
       </div>
     </div>
   )

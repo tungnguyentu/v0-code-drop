@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
+import { Footer } from "@/components/footer"
 
 export default function NotFound() {
   return (
@@ -20,6 +21,10 @@ export default function NotFound() {
         >
           <Link href="/">Create a New Snippet</Link>
         </Button>
+
+        <div className="mt-4">
+          <Footer />
+        </div>
       </div>
     </div>
   )

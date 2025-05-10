@@ -8,6 +8,8 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Codin - Share Code, Not Complexity",
   description: "A modern platform for sharing code snippets with simplicity",
+  authors: [{ name: "tungnguyentu" }],
+  creator: "tungnguyentu",
     generator: 'v0.dev'
 }
 

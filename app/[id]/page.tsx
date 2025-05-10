@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { ViewPaste } from "@/components/view-paste"
 import { getPasteById } from "@/app/actions"
 import { Logo } from "@/components/logo"
+import { Footer } from "@/components/footer"
 
 interface PastePageProps {
   params: {
@@ -31,9 +32,7 @@ export default async function PastePage({ params }: PastePageProps) {
           </section>
         </main>
 
-        <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} Codin. Share code, not complexity.</p>
-        </footer>
+        <Footer />
       </div>
     </div>
   )
