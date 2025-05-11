@@ -47,13 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   createButton.addEventListener("click", createSnippet)
-  \
-  copyUrlButton.addEventListener("click, copyToClipboard)
+  copyUrlButton.addEventListener("click", copyToClipboard)
   createNewButton.addEventListener("click", resetForm)
-  tryAgainButton.addEventListener("click", () =>
-  errorSection.classList.add("hidden")
-  createForm.classList.remove("hidden")
-  )
+  tryAgainButton.addEventListener("click", () => {
+    errorSection.classList.add("hidden")
+    createForm.classList.remove("hidden")
+  })
 
   // Safely attempt to check for selected text
   tryGetSelectedText()
