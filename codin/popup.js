@@ -28,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const createNewButton = document.getElementById("create-new")
   const tryAgainButton = document.getElementById("try-again")
 
-  // API URL for Codin - trying the server action endpoint
-  const API_URL = "https://codin.site/api/actions"
+  // Correct API URL for creating snippets
+  const API_URL = "https://codin.site/api/create"
 
   // Event listeners
   passwordToggle.addEventListener("change", function () {
@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loadingSection.classList.remove("hidden")
 
     try {
-      // Prepare the snippet data
-      const snippetData = {
+      // Prepare the request payload based on the Codin API structure
+      const payload = {
         title: title || null,
         content: content,
         language: language,
@@ -138,21 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
         password: isPasswordProtected ? password : undefined,
       }
 
-      // Prepare the request payload for the server action
-      const payload = {
-        action: "createPaste",
-        data: snippetData,
-      }
+      let response, data
 
-      let data
-      let success = false
-
-      // Try multiple approaches in sequence
-
-      // 1. Try direct API call to server action endpoint
       try {
-        console.log("Trying direct API call to server action endpoint...")
-        const response = await fetch(API_URL, {
+        // Try direct API call first
+        response = await fetch(API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -160,56 +150,40 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(payload),
         })
 
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`)
-        }
-
         data = await response.json()
-        success = true
-      } catch (error1) {
-        console.error("Direct API call failed:", error1)
 
-        // 2. Try using the background script
-        try {
-          console.log("Trying via background script...")
-          data = await new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage(
-              {
-                action: "createSnippet",
-                url: API_URL,
-                data: payload,
-              },
-              (response) => {
-                if (response && response.success) {
-                  resolve(response.data)
-                } else {
-                  reject(new Error(response?.error || "Failed to create snippet via background"))
-                }
-              },
-            )
-          })
-          success = true
-        } catch (error2) {
-          console.error("Background script approach failed:", error2)
-
-          // 3. Try the fallback approach using form submission
-          try {
-            console.log("Trying fallback approach via form submission...")
-            data = await window.createSnippetViaForm(snippetData)
-            success = true
-          } catch (error3) {
-            console.error("Fallback approach failed:", error3)
-            throw new Error("All approaches failed. Please try again later.")
-          }
+        if (!response.ok) {
+          throw new Error(data.message || `API error: ${response.status}`)
         }
+      } catch (directApiError) {
+        // If direct API call fails, try using the background script
+        console.log("Direct API call failed, trying via background script:", directApiError)
+
+        data = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            {
+              action: "createSnippet",
+              url: API_URL,
+              data: payload,
+            },
+            (response) => {
+              if (response && response.success) {
+                resolve(response.data)
+              } else {
+                reject(new Error(response?.error || "Failed to create snippet via background"))
+              }
+            },
+          )
+        })
       }
 
-      if (!success || !data) {
-        throw new Error("Failed to create snippet after trying all approaches")
+      // Check if the API call was successful
+      if (!data.success) {
+        throw new Error(data.message || "Failed to create snippet")
       }
 
       // Get the snippet ID from the response
-      const snippetId = data.shortId || data.id || data.short_id
+      const snippetId = data.shortId
       if (!snippetId) {
         throw new Error("Invalid response from server: missing snippet ID")
       }
@@ -245,17 +219,22 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to copy URL to clipboard
   function copyToClipboard() {
     snippetUrlInput.select()
-    document.execCommand("copy")
+    navigator.clipboard
+      .writeText(snippetUrlInput.value)
+      .then(() => {
+        // Show success state
+        copyIcon.classList.add("hidden")
+        checkIcon.classList.remove("hidden")
 
-    // Show success state
-    copyIcon.classList.add("hidden")
-    checkIcon.classList.remove("hidden")
-
-    // Reset after 2 seconds
-    setTimeout(() => {
-      copyIcon.classList.remove("hidden")
-      checkIcon.classList.add("hidden")
-    }, 2000)
+        // Reset after 2 seconds
+        setTimeout(() => {
+          copyIcon.classList.remove("hidden")
+          checkIcon.classList.add("hidden")
+        }, 2000)
+      })
+      .catch((err) => {
+        console.error("Failed to copy text: ", err)
+      })
   }
 
   // Function to reset the form
