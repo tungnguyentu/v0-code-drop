@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codin Snippet Saver - Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Codin</span>
+          <span class="logo-subtitle">share code, not complexity</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1>Settings</h1>
+      
+      <div class="section">
+        <h2>Account</h2>
+        <div class="form-group">
+          <label for="api-key">API Key</label>
+          <div class="input-with-button">
+            <input type="password" id="api-key" placeholder="Your API key">
+            <button id="show-api-key" class="icon-button">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <p class="help-text">
+            You can find your API key in your <a href="#" id="get-api-key">Codin account settings</a>.
+          </p>
+        </div>
+        <div class="form-group">
+          <button id="save-api-key" class="primary">Save API Key</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Default Settings</h2>
+        <div class="form-group">
+          <label for="default-language">Default Language</label>
+          <select id="default-language">
+            <option value="plaintext">Plain Text</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="csharp">C#</option>
+            <option value="cpp">C++</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="sql">SQL</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="default-theme">Default Theme</label>
+          <select id="default-theme">
+            <option value="vs">Light (VS)</option>
+            <option value="vs-dark">Dark (VS)</option>
+            <option value="github">GitHub</option>
+            <option value="dracula">Dracula</option>
+            <option value="monokai">Monokai</option>
+            <option value="solarized-light">Solarized Light</option>
+            <option value="solarized-dark">Solarized Dark</option>
+            <option value="nord">Nord</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="default-expiration">Default Expiration</label>
+          <select id="default-expiration">
+            <option value="1d">1 day</option>
+            <option value="1w">1 week</option>
+            <option value="1m">1 month</option>
+            <option value="never">Never</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button id="save-defaults" class="primary">Save Defaults</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Extension Options</h2>
+        <div class="form-group checkbox">
+          <input type="checkbox" id="show-context-menu">
+          <label for="show-context-menu">Show "Save to Codin" in context menu</label>
+        </div>
+        <div class="form-group checkbox">
+          <input type="checkbox" id="show-inline-tooltip">
+          <label for="show-inline-tooltip">Show inline tooltip when code is selected</label>
+        </div>
+        <div class="form-group">
+          <button id="save-options" class="primary">Save Options</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>About</h2>
+        <p>Codin Snippet Saver v1.0.0</p>
+        <p>This extension allows you to quickly save code snippets from any webpage directly to your Codin account.</p>
+        <p>
+          <a href="https://codin.example.com" target="_blank">Visit Codin</a> |
+          <a href="https://codin.example.com/help" target="_blank">Help</a> |
+          <a href="https://codin.example.com/feedback" target="_blank">Feedback</a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>
