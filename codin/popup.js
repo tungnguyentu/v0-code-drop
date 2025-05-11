@@ -47,24 +47,62 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   createButton.addEventListener("click", createSnippet)
-  copyUrlButton.addEventListener("click", copyToClipboard)
+  \
+  copyUrlButton.addEventListener("click, copyToClipboard)
   createNewButton.addEventListener("click", resetForm)
-  tryAgainButton.addEventListener("click", () => {
-    errorSection.classList.add("hidden")
-    createForm.classList.remove("hidden")
-  })
+  tryAgainButton.addEventListener("click", () =>
+  errorSection.classList.add("hidden")
+  createForm.classList.remove("hidden")
+  )
 
-  // Check if there's selected text in the active tab
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: "getSelectedText" }, (response) => {
-      if (response && response.selectedText) {
-        contentInput.value = response.selectedText
+  // Safely attempt to check for selected text
+  tryGetSelectedText()
 
-        // Try to detect language based on the file extension or content
-        detectLanguage(tabs[0].url, response.selectedText)
-      }
-    })
-  })
+  // Function to safely attempt to get selected text
+  function tryGetSelectedText() {
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs || !tabs[0] || !tabs[0].id) {
+          console.log("No valid tab found")
+          return
+        }
+
+        // Check if we can inject a content script in this tab
+        const url = tabs[0].url || ""
+        if (
+          url.startsWith("chrome://") ||
+          url.startsWith("edge://") ||
+          url.startsWith("about:") ||
+          url.startsWith("chrome-extension://")
+        ) {
+          console.log("Cannot access content in this tab:", url)
+          return
+        }
+
+        // Attempt to send a message to the content script
+        // We wrap this in a try-catch to handle the case where runtime.lastError occurs
+        try {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "getSelectedText" }, (response) => {
+            // Check for runtime.lastError to avoid unhandled error message
+            if (chrome.runtime.lastError) {
+              console.log("Content script connection error:", chrome.runtime.lastError.message)
+              return
+            }
+
+            if (response && response.selectedText) {
+              contentInput.value = response.selectedText
+              // Try to detect language based on the file extension or content
+              detectLanguage(tabs[0].url, response.selectedText)
+            }
+          })
+        } catch (err) {
+          console.log("Error sending message to content script:", err)
+        }
+      })
+    } catch (err) {
+      console.log("Error querying tabs:", err)
+    }
+  }
 
   // Function to detect language based on URL or content
   function detectLanguage(url, content) {
@@ -167,6 +205,11 @@ document.addEventListener("DOMContentLoaded", () => {
               data: payload,
             },
             (response) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message))
+                return
+              }
+
               if (response && response.success) {
                 resolve(response.data)
               } else {
@@ -234,6 +277,18 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch((err) => {
         console.error("Failed to copy text: ", err)
+        // Fallback to execCommand for older browsers
+        document.execCommand("copy")
+
+        // Show success state
+        copyIcon.classList.add("hidden")
+        checkIcon.classList.remove("hidden")
+
+        // Reset after 2 seconds
+        setTimeout(() => {
+          copyIcon.classList.remove("hidden")
+          checkIcon.classList.add("hidden")
+        }, 2000)
       })
   }
 
@@ -262,16 +317,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Function to save snippet to history
   function saveToHistory(snippet) {
-    chrome.storage.local.get(["snippetHistory"], (result) => {
-      const history = result.snippetHistory || []
-      history.unshift(snippet)
+    try {
+      chrome.storage.local.get(["snippetHistory"], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error accessing storage:", chrome.runtime.lastError)
+          return
+        }
 
-      // Keep only the last 50 snippets
-      if (history.length > 50) {
-        history.pop()
-      }
+        const history = result.snippetHistory || []
+        history.unshift(snippet)
 
-      chrome.storage.local.set({ snippetHistory: history })
-    })
+        // Keep only the last 50 snippets
+        if (history.length > 50) {
+          history.pop()
+        }
+
+        chrome.storage.local.set({ snippetHistory: history }, () => {
+          if (chrome.runtime.lastError) {
+            console.error("Error saving to storage:", chrome.runtime.lastError)
+          }
+        })
+      })
+    } catch (err) {
+      console.error("Error in saveToHistory:", err)
+    }
   }
 })
