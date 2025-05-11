@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codin Snippet Creator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Codin</span>
+          <span class="logo-subtitle">share code, not complexity</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="create-form">
+      <div class="form-group">
+        <label for="title">Title (optional)</label>
+        <input type="text" id="title" placeholder="Untitled Snippet">
+      </div>
+
+      <div class="form-group">
+        <label for="content">Content</label>
+        <textarea id="content" placeholder="Paste your code or text here..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="language">Language</label>
+          <select id="language">
+            <option value="plaintext">Plain Text</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="csharp">C#</option>
+            <option value="cpp">C++</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="sql">SQL</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+
+        <div class="form-group half">
+          <label for="theme">Theme</label>
+          <select id="theme">
+            <option value="vs">Light (VS)</option>
+            <option value="vs-dark">Dark (VS)</option>
+            <option value="github">GitHub</option>
+            <option value="dracula">Dracula</option>
+            <option value="monokai">Monokai</option>
+            <option value="solarized-light">Solarized Light</option>
+            <option value="solarized-dark">Solarized Dark</option>
+            <option value="nord">Nord</option>
+            <option value="one-light">One Light</option>
+            <option value="one-dark">One Dark</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="expiration">Expiration</label>
+          <select id="expiration">
+            <option value="5m">5 minutes</option>
+            <option value="1h">1 hour</option>
+            <option value="1d" selected>1 day</option>
+            <option value="1w">1 week</option>
+            <option value="never">Never</option>
+          </select>
+        </div>
+
+        <div class="form-group half">
+          <label for="viewLimit">View Limit</label>
+          <select id="viewLimit">
+            <option value="1">1 view</option>
+            <option value="5">5 views</option>
+            <option value="10">10 views</option>
+            <option value="unlimited" selected>Unlimited</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="password-protection">
+          <label class="toggle-label">
+            <span>Password Protection</span>
+            <input type="checkbox" id="password-toggle">
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+        <div id="password-fields" class="hidden">
+          <input type="password" id="password" placeholder="Enter a secure password">
+          <div class="password-toggle">
+            <button id="toggle-password" type="button">
+              <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon hidden">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button id="create-button" class="button">Create Snippet</button>
+    </div>
+
+    <div id="result" class="hidden">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h3>Snippet Created!</h3>
+      <p>Your code snippet has been created successfully.</p>
+      
+      <div class="url-container">
+        <input type="text" id="snippet-url" readonly>
+        <button id="copy-url" class="button-icon">
+          <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <svg id="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon hidden">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div id="password-notice" class="hidden">
+        <div class="notice">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <p>This snippet is password protected. Anyone with the link will need the password to view it.</p>
+        </div>
+      </div>
+
+      <button id="create-new" class="button">Create Another Snippet</button>
+    </div>
+
+    <div id="loading" class="hidden">
+      <div class="spinner"></div>
+      <p>Creating snippet...</p>
+    </div>
+
+    <div id="error" class="hidden">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3>Error</h3>
+      <p id="error-message">Something went wrong. Please try again.</p>
+      <button id="try-again" class="button">Try Again</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
