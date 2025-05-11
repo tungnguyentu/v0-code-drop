@@ -7,9 +7,6 @@ export function Footer() {
         <FeedbackDialog />
       </div>
       <p className="text-sm text-gray-500">© {new Date().getFullYear()} Codin. Share code, not complexity.</p>
-      <p className="mt-1 text-sm text-gray-500">
-        Created with ❤️ by <span className="text-emerald-600 font-medium">tungnguyentu</span>
-      </p>
     </footer>
   )
 }
