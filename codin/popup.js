@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const createNewButton = document.getElementById("create-new")
   const tryAgainButton = document.getElementById("try-again")
 
-  // API URL - replace with your actual API endpoint
+  // API URL for Codin
   const API_URL = "https://codin.site/api/snippets"
 
   // Event listeners
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // More advanced detection could be added here
   }
 
-  // Function to create a snippet
+  // Function to create a snippet using the actual API
   async function createSnippet() {
     const title = titleInput.value.trim()
     const content = contentInput.value.trim()
@@ -129,28 +129,65 @@ document.addEventListener("DOMContentLoaded", () => {
     loadingSection.classList.remove("hidden")
 
     try {
-      // In a real extension, you would make an API call here
-      // For this example, we'll simulate an API response
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Generate a random ID for the snippet
-      const snippetId = generateRandomId(8)
-      const snippetUrl = `https://codin.site/${snippetId}`
-
-      // Create snippet object
-      const snippet = {
-        title: title,
+      // Prepare the request payload based on the Codin API structure
+      const payload = {
+        title: title || null,
         content: content,
         language: language,
-        theme: theme,
         expiration: expiration,
         viewLimit: viewLimit,
-        isPasswordProtected: isPasswordProtected,
-        password: password,
-        url: snippetUrl,
+        theme: theme,
+        password: isPasswordProtected ? password : undefined,
       }
+
+      let data
+
+      try {
+        // Try direct API call first
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || `API error: ${response.status}`)
+        }
+
+        data = await response.json()
+      } catch (directApiError) {
+        // If direct API call fails, try using the background script
+        console.log("Direct API call failed, trying via background script:", directApiError)
+
+        data = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            {
+              action: "createSnippet",
+              url: API_URL,
+              data: payload,
+            },
+            (response) => {
+              if (response && response.success) {
+                resolve(response.data)
+              } else {
+                reject(new Error(response?.error || "Failed to create snippet via background"))
+              }
+            },
+          )
+        })
+      }
+
+      // Get the snippet ID from the response
+      const snippetId = data.shortId || data.id || data.short_id
+      if (!snippetId) {
+        throw new Error("Invalid response from server: missing snippet ID")
+      }
+
+      // Generate the snippet URL
+      const snippetUrl = `https://codin.site/${snippetId}`
 
       // Show result
       loadingSection.classList.add("hidden")
@@ -161,7 +198,15 @@ document.addEventListener("DOMContentLoaded", () => {
       passwordNotice.classList.toggle("hidden", !isPasswordProtected)
 
       // Save to local storage for history
-      saveToHistory(snippet)
+      saveToHistory({
+        id: snippetId,
+        title: title || "Untitled Snippet",
+        language,
+        theme,
+        createdAt: new Date().toISOString(),
+        url: snippetUrl,
+        isPasswordProtected,
+      })
     } catch (error) {
       console.error("Error creating snippet:", error)
       loadingSection.classList.add("hidden")
@@ -207,16 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
     createForm.classList.add("hidden")
     errorSection.classList.remove("hidden")
     errorMessage.textContent = message
-  }
-
-  // Function to generate a random ID
-  function generateRandomId(length) {
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    let result = ""
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length))
-    }
-    return result
   }
 
   // Function to save snippet to history
