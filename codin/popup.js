@@ -28,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const createNewButton = document.getElementById("create-new")
   const tryAgainButton = document.getElementById("try-again")
 
-  // Correct API URL for creating snippets
-  const API_URL = "https://codin.site/api/create"
+  // API URL for Codin - trying the server action endpoint
+  const API_URL = "https://codin.site/api/actions"
 
   // Event listeners
   passwordToggle.addEventListener("change", function () {
@@ -128,9 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loadingSection.classList.remove("hidden")
 
     try {
-      // Prepare the request payload based on the Codin API structure
-      // Removed theme parameter as requested
-      const payload = {
+      // Prepare the snippet data
+      const snippetData = {
         title: title || null,
         content: content,
         language: language,
@@ -139,10 +138,20 @@ document.addEventListener("DOMContentLoaded", () => {
         password: isPasswordProtected ? password : undefined,
       }
 
-      let data
+      // Prepare the request payload for the server action
+      const payload = {
+        action: "createPaste",
+        data: snippetData,
+      }
 
+      let data
+      let success = false
+
+      // Try multiple approaches in sequence
+
+      // 1. Try direct API call to server action endpoint
       try {
-        // Try direct API call first
+        console.log("Trying direct API call to server action endpoint...")
         const response = await fetch(API_URL, {
           method: "POST",
           headers: {
@@ -152,31 +161,51 @@ document.addEventListener("DOMContentLoaded", () => {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.message || `API error: ${response.status}`)
+          throw new Error(`API error: ${response.status}`)
         }
 
         data = await response.json()
-      } catch (directApiError) {
-        // If direct API call fails, try using the background script
-        console.log("Direct API call failed, trying via background script:", directApiError)
+        success = true
+      } catch (error1) {
+        console.error("Direct API call failed:", error1)
 
-        data = await new Promise((resolve, reject) => {
-          chrome.runtime.sendMessage(
-            {
-              action: "createSnippet",
-              url: API_URL,
-              data: payload,
-            },
-            (response) => {
-              if (response && response.success) {
-                resolve(response.data)
-              } else {
-                reject(new Error(response?.error || "Failed to create snippet via background"))
-              }
-            },
-          )
-        })
+        // 2. Try using the background script
+        try {
+          console.log("Trying via background script...")
+          data = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(
+              {
+                action: "createSnippet",
+                url: API_URL,
+                data: payload,
+              },
+              (response) => {
+                if (response && response.success) {
+                  resolve(response.data)
+                } else {
+                  reject(new Error(response?.error || "Failed to create snippet via background"))
+                }
+              },
+            )
+          })
+          success = true
+        } catch (error2) {
+          console.error("Background script approach failed:", error2)
+
+          // 3. Try the fallback approach using form submission
+          try {
+            console.log("Trying fallback approach via form submission...")
+            data = await window.createSnippetViaForm(snippetData)
+            success = true
+          } catch (error3) {
+            console.error("Fallback approach failed:", error3)
+            throw new Error("All approaches failed. Please try again later.")
+          }
+        }
+      }
+
+      if (!success || !data) {
+        throw new Error("Failed to create snippet after trying all approaches")
       }
 
       // Get the snippet ID from the response
