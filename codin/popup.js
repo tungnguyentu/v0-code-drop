@@ -28,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const createNewButton = document.getElementById("create-new")
   const tryAgainButton = document.getElementById("try-again")
 
-  // API URL for Codin
-  const API_URL = "https://codin.site/api/snippets"
+  // Correct API URL for creating snippets
+  const API_URL = "https://codin.site/api/create"
 
   // Event listeners
   passwordToggle.addEventListener("change", function () {
@@ -106,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const title = titleInput.value.trim()
     const content = contentInput.value.trim()
     const language = languageSelect.value
-    const theme = themeSelect.value
     const expiration = expirationSelect.value
     const viewLimit = viewLimitSelect.value
     const isPasswordProtected = passwordToggle.checked
@@ -130,13 +129,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Prepare the request payload based on the Codin API structure
+      // Removed theme parameter as requested
       const payload = {
         title: title || null,
         content: content,
         language: language,
         expiration: expiration,
         viewLimit: viewLimit,
-        theme: theme,
         password: isPasswordProtected ? password : undefined,
       }
 
@@ -202,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
         id: snippetId,
         title: title || "Untitled Snippet",
         language,
-        theme,
         createdAt: new Date().toISOString(),
         url: snippetUrl,
         isPasswordProtected,
