@@ -4,9 +4,10 @@ import { createServerClient } from "@/lib/supabase/server"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, ExternalLink, Lock } from "lucide-react"
+import { Eye, ExternalLink, Lock, Palette } from "lucide-react"
 import { DeleteSnippetButton } from "@/components/admin/delete-snippet-button"
 import { Badge } from "@/components/ui/badge"
+import { THEME_OPTIONS } from "@/lib/constants"
 
 async function getSnippets() {
   const supabase = createServerClient()
@@ -28,6 +29,12 @@ async function getSnippets() {
 export default async function AdminSnippetsPage() {
   const snippets = await getSnippets()
 
+  // Helper function to get theme label
+  const getThemeLabel = (themeValue: string) => {
+    const theme = THEME_OPTIONS.find((t) => t.value === themeValue)
+    return theme ? theme.label : "Light (VS)"
+  }
+
   return (
     <DashboardLayout title="Manage Snippets">
       <Card>
@@ -43,6 +50,7 @@ export default async function AdminSnippetsPage() {
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">ID</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Title</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Language</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Theme</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Created</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Expires</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Views</th>
@@ -65,6 +73,12 @@ export default async function AdminSnippetsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-sm">{snippet.language}</td>
+                      <td className="py-3 px-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Palette className="h-3.5 w-3.5 text-gray-400" />
+                          {getThemeLabel(snippet.theme || "vs")}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 text-sm text-gray-500">
                         {formatDistanceToNow(new Date(snippet.created_at), { addSuffix: true })}
                       </td>

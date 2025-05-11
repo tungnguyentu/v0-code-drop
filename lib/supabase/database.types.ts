@@ -16,6 +16,7 @@ export interface Database {
           view_count: number
           password_hash: string | null
           is_protected: boolean
+          theme: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +30,7 @@ export interface Database {
           view_count?: number
           password_hash?: string | null
           is_protected?: boolean
+          theme?: string | null
         }
         Update: {
           id?: string
@@ -42,6 +44,7 @@ export interface Database {
           view_count?: number
           password_hash?: string | null
           is_protected?: boolean
+          theme?: string | null
         }
       }
       admin_sessions: {

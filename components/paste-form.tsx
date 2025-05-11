@@ -13,44 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
-
-const LANGUAGE_OPTIONS = [
-  { value: "plaintext", label: "Plain Text" },
-  { value: "javascript", label: "JavaScript" },
-  { value: "typescript", label: "TypeScript" },
-  { value: "python", label: "Python" },
-  { value: "java", label: "Java" },
-  { value: "csharp", label: "C#" },
-  { value: "cpp", label: "C++" },
-  { value: "go", label: "Go" },
-  { value: "rust", label: "Rust" },
-  { value: "php", label: "PHP" },
-  { value: "ruby", label: "Ruby" },
-  { value: "swift", label: "Swift" },
-  { value: "kotlin", label: "Kotlin" },
-  { value: "html", label: "HTML" },
-  { value: "css", label: "CSS" },
-  { value: "sql", label: "SQL" },
-  { value: "json", label: "JSON" },
-  { value: "yaml", label: "YAML" },
-  { value: "markdown", label: "Markdown" },
-  { value: "bash", label: "Bash" },
-]
-
-const EXPIRATION_OPTIONS = [
-  { value: "5m", label: "5 minutes" },
-  { value: "1h", label: "1 hour" },
-  { value: "1d", label: "1 day" },
-  { value: "1w", label: "1 week" },
-  { value: "never", label: "Never" },
-]
-
-const VIEW_LIMIT_OPTIONS = [
-  { value: "1", label: "1 view" },
-  { value: "5", label: "5 views" },
-  { value: "10", label: "10 views" },
-  { value: "unlimited", label: "Unlimited" },
-]
+import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
 
 export function PasteForm() {
   const router = useRouter()
@@ -59,6 +22,7 @@ export function PasteForm() {
   const [language, setLanguage] = useState("plaintext")
   const [expiration, setExpiration] = useState("1d")
   const [viewLimit, setViewLimit] = useState("unlimited")
+  const [theme, setTheme] = useState("vs")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pasteUrl, setPasteUrl] = useState("")
   const [copied, setCopied] = useState(false)
@@ -80,6 +44,7 @@ export function PasteForm() {
         expiration,
         viewLimit,
         password: isPasswordProtected ? password : undefined,
+        theme,
       })
 
       // Generate a shareable URL
@@ -108,6 +73,7 @@ export function PasteForm() {
     setLanguage("plaintext")
     setExpiration("1d")
     setViewLimit("unlimited")
+    setTheme("vs")
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
@@ -181,11 +147,11 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <CodeEditor value={content} onChange={setContent} language={language} />
+              <CodeEditor value={content} onChange={setContent} language={language} theme={theme} />
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="language" className="text-gray-700">
                 Syntax Highlighting
@@ -199,6 +165,27 @@ export function PasteForm() {
                 </SelectTrigger>
                 <SelectContent>
                   {LANGUAGE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="theme" className="text-gray-700">
+                Theme
+              </Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger
+                  id="theme"
+                  className="mt-1.5 border-gray-200 bg-white focus:border-emerald-500 focus:ring-emerald-500"
+                >
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  {THEME_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

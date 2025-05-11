@@ -1,13 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Copy, Clock, Eye } from "lucide-react"
+import { Check, Copy, Clock, Eye, Palette } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { vs } from "react-syntax-highlighter/dist/esm/styles/prism"
+import {
+  vs,
+  vscDarkPlus,
+  github,
+  dracula,
+  monokai,
+  solarizedlight,
+  solarizedDark,
+  nord,
+  oneLight,
+  oneDark,
+} from "react-syntax-highlighter/dist/esm/styles/prism"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { THEME_OPTIONS } from "@/lib/constants"
 
 interface Paste {
   id: string
@@ -18,6 +31,7 @@ interface Paste {
   expiresAt: string | null
   viewLimit: string
   viewCount: number
+  theme: string
 }
 
 interface ViewPasteProps {
@@ -26,6 +40,7 @@ interface ViewPasteProps {
 
 export function ViewPaste({ paste }: ViewPasteProps) {
   const [copied, setCopied] = useState(false)
+  const [currentTheme, setCurrentTheme] = useState(paste.theme || "vs")
 
   const copyToClipboard = async () => {
     try {
@@ -39,6 +54,38 @@ export function ViewPaste({ paste }: ViewPasteProps) {
 
   const createdDate = new Date(paste.createdAt)
   const expiresDate = paste.expiresAt ? new Date(paste.expiresAt) : null
+
+  // Get the appropriate style based on the theme
+  const getThemeStyle = () => {
+    switch (currentTheme) {
+      case "vs-dark":
+        return vscDarkPlus
+      case "github":
+        return github
+      case "dracula":
+        return dracula
+      case "monokai":
+        return monokai
+      case "solarized-light":
+        return solarizedlight
+      case "solarized-dark":
+        return solarizedDark
+      case "nord":
+        return nord
+      case "one-light":
+        return oneLight
+      case "one-dark":
+        return oneDark
+      default:
+        return vs // Light theme (default)
+    }
+  }
+
+  // Get the current theme label
+  const getCurrentThemeLabel = () => {
+    const theme = THEME_OPTIONS.find((t) => t.value === currentTheme)
+    return theme ? theme.label : "Light (VS)"
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20">
@@ -68,19 +115,45 @@ export function ViewPaste({ paste }: ViewPasteProps) {
         </div>
       </div>
       <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute right-4 top-4 z-10 flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
-          onClick={copyToClipboard}
-        >
-          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Copied!" : "Copy"}
-        </Button>
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
+              >
+                <Palette className="h-4 w-4" />
+                <span>{getCurrentThemeLabel()}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {THEME_OPTIONS.map((theme) => (
+                <DropdownMenuItem
+                  key={theme.value}
+                  onClick={() => setCurrentTheme(theme.value)}
+                  className={currentTheme === theme.value ? "bg-gray-100" : ""}
+                >
+                  {theme.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
+            onClick={copyToClipboard}
+          >
+            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Copied!" : "Copy"}
+          </Button>
+        </div>
         <div className="max-h-[600px] overflow-auto">
           <SyntaxHighlighter
             language={paste.language === "plaintext" ? "text" : paste.language}
-            style={vs}
+            style={getThemeStyle()}
             showLineNumbers
             customStyle={{
               margin: 0,

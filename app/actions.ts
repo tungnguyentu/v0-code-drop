@@ -13,6 +13,7 @@ interface CreatePasteParams {
   expiration: string
   viewLimit: string
   password?: string
+  theme: string
 }
 
 export async function createPaste({
@@ -22,6 +23,7 @@ export async function createPaste({
   expiration,
   viewLimit,
   password,
+  theme,
 }: CreatePasteParams): Promise<string> {
   const supabase = createServerClient()
 
@@ -62,6 +64,7 @@ export async function createPaste({
       view_count: 0,
       password_hash: passwordHash,
       is_protected: isProtected,
+      theme,
     })
     .select("short_id")
     .single()
@@ -143,6 +146,7 @@ export async function getPasteById(shortId: string) {
     viewLimit: paste.view_limit,
     viewCount: paste.view_count,
     isProtected: paste.is_protected,
+    theme: paste.theme || "vs",
   }
 }
 
