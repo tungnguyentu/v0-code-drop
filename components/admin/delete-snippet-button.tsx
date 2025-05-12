@@ -18,9 +18,10 @@ import {
 
 interface DeleteSnippetButtonProps {
   id: string
+  onDelete?: () => void
 }
 
-export function DeleteSnippetButton({ id }: DeleteSnippetButtonProps) {
+export function DeleteSnippetButton({ id, onDelete }: DeleteSnippetButtonProps) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -37,6 +38,11 @@ export function DeleteSnippetButton({ id }: DeleteSnippetButtonProps) {
       }
 
       router.refresh()
+
+      // Call the onDelete callback if provided
+      if (onDelete) {
+        onDelete()
+      }
     } catch (error) {
       console.error("Error deleting snippet:", error)
     } finally {

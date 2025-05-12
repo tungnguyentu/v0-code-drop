@@ -1,45 +1,45 @@
+"use client"
+
 import Link from "next/link"
+import useSWR from "swr"
 import { DashboardLayout } from "@/components/admin/dashboard-layout"
-import { createServerClient } from "@/lib/supabase/server"
-import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, ExternalLink, Lock, Palette } from "lucide-react"
 import { DeleteSnippetButton } from "@/components/admin/delete-snippet-button"
 import { Badge } from "@/components/ui/badge"
 import { THEME_OPTIONS } from "@/lib/constants"
+import { getSnippetsList } from "@/app/actions/snippets"
+import { formatDistanceToNow } from "date-fns"
 
-async function getSnippets() {
-  const supabase = createServerClient()
+// Helper function to get theme label
+const getThemeLabel = (themeValue: string) => {
+  const theme = THEME_OPTIONS.find((t) => t.value === themeValue)
+  return theme ? theme.label : "Light (VS)"
+}
 
-  const { data: snippets, error } = await supabase
-    .from("pastes")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100)
+export default function AdminSnippetsPage() {
+  const {
+    data: snippets = [],
+    error,
+    mutate,
+  } = useSWR("snippets", getSnippetsList, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+    revalidateOnFocus: true,
+  })
 
   if (error) {
     console.error("Error fetching snippets:", error)
-    return []
-  }
-
-  return snippets || []
-}
-
-export default async function AdminSnippetsPage() {
-  const snippets = await getSnippets()
-
-  // Helper function to get theme label
-  const getThemeLabel = (themeValue: string) => {
-    const theme = THEME_OPTIONS.find((t) => t.value === themeValue)
-    return theme ? theme.label : "Light (VS)"
   }
 
   return (
     <DashboardLayout title="Manage Snippets">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>All Snippets</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => mutate()} className="border-gray-200 hover:bg-gray-50">
+            Refresh
+          </Button>
         </CardHeader>
         <CardContent>
           {snippets.length > 0 ? (
@@ -101,7 +101,7 @@ export default async function AdminSnippetsPage() {
                               <span className="sr-only">View</span>
                             </Button>
                           </Link>
-                          <DeleteSnippetButton id={snippet.short_id} />
+                          <DeleteSnippetButton id={snippet.short_id} onDelete={() => mutate()} />
                         </div>
                       </td>
                     </tr>
