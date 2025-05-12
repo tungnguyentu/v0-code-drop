@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs"
 import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
+import { invalidateCacheByPrefix } from "@/lib/cache"
 
 interface CreatePasteParams {
   title: string
@@ -73,6 +74,10 @@ export async function createPaste({
     console.error("Error creating paste:", error)
     throw new Error("Failed to create paste")
   }
+
+  // Invalidate all admin-related caches when a new paste is created
+  invalidateCacheByPrefix("admin")
+  invalidateCacheByPrefix("snippets")
 
   return shortId
 }

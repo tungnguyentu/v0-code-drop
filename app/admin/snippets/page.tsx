@@ -2,15 +2,18 @@
 
 import Link from "next/link"
 import useSWR from "swr"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/admin/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, ExternalLink, Lock, Palette } from "lucide-react"
+import { Eye, ExternalLink, Lock, Palette, RefreshCw } from "lucide-react"
 import { DeleteSnippetButton } from "@/components/admin/delete-snippet-button"
 import { Badge } from "@/components/ui/badge"
 import { THEME_OPTIONS } from "@/lib/constants"
 import { getSnippetsList } from "@/app/actions/snippets"
 import { formatDistanceToNow } from "date-fns"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 // Helper function to get theme label
 const getThemeLabel = (themeValue: string) => {
@@ -19,17 +22,29 @@ const getThemeLabel = (themeValue: string) => {
 }
 
 export default function AdminSnippetsPage() {
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
   const {
     data: snippets = [],
     error,
     mutate,
+    isValidating,
   } = useSWR("snippets", getSnippetsList, {
-    refreshInterval: 5000, // Refresh every 5 seconds
-    revalidateOnFocus: true,
+    refreshInterval: autoRefresh ? 15000 : 0, // Refresh every 15 seconds if enabled
+    revalidateOnFocus: false, // Don't revalidate on focus to reduce API calls
+    dedupingInterval: 5000, // Deduplicate requests within 5 seconds
+    errorRetryCount: 3, // Retry 3 times on error
   })
 
   if (error) {
     console.error("Error fetching snippets:", error)
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await mutate()
+    setIsRefreshing(false)
   }
 
   return (
@@ -37,12 +52,35 @@ export default function AdminSnippetsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>All Snippets</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => mutate()} className="border-gray-200 hover:bg-gray-50">
-            Refresh
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+              <Label htmlFor="auto-refresh">Auto-refresh</Label>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isValidating}
+              className="border-gray-200 hover:bg-gray-50"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing || isValidating ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {snippets.length > 0 ? (
+          {isValidating && !snippets.length && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+            </div>
+          )}
+
+          {!isValidating && snippets.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No snippets found</p>
+          )}
+
+          {snippets.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -109,8 +147,6 @@ export default function AdminSnippetsPage() {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p className="text-center text-gray-500 py-8">No snippets found</p>
           )}
         </CardContent>
       </Card>

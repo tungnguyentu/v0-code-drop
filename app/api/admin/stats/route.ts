@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { isAuthenticated } from "@/lib/auth"
 import { createServerClient } from "@/lib/supabase/server"
+import { getCachedData, setCachedData, isCacheValid } from "@/lib/cache"
+
+// Cache TTL in seconds
+const CACHE_TTL = 60 // 1 minute
 
 export async function GET() {
   try {
@@ -8,6 +12,21 @@ export async function GET() {
     const isAdmin = await isAuthenticated()
     if (!isAdmin) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+    }
+
+    const cacheKey = "admin-dashboard-stats"
+
+    // Check if we have valid cached data
+    if (isCacheValid(cacheKey)) {
+      const cachedData = getCachedData(cacheKey)
+      if (cachedData) {
+        // Return cached data with cache header
+        return NextResponse.json(cachedData, {
+          headers: {
+            "Cache-Control": `public, max-age=${CACHE_TTL}`,
+          },
+        })
+      }
     }
 
     const supabase = createServerClient()
@@ -36,11 +55,21 @@ export async function GET() {
       .order("view_count", { ascending: false })
       .limit(5)
 
-    return NextResponse.json({
+    const responseData = {
       totalSnippets: totalSnippets || 0,
       activeSnippets: activeSnippets || 0,
       recentSnippets: recentSnippets || 0,
       mostViewed: mostViewed || [],
+    }
+
+    // Cache the result
+    setCachedData(cacheKey, responseData, { ttl: CACHE_TTL })
+
+    // Return the data with cache header
+    return NextResponse.json(responseData, {
+      headers: {
+        "Cache-Control": `public, max-age=${CACHE_TTL}`,
+      },
     })
   } catch (error) {
     console.error("Error fetching stats:", error)

@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { invalidateSnippetsCache } from "@/app/actions/snippets"
+import { invalidateCacheByPrefix } from "@/lib/cache"
 
 interface DeleteSnippetButtonProps {
   id: string
@@ -36,6 +38,12 @@ export function DeleteSnippetButton({ id, onDelete }: DeleteSnippetButtonProps) 
       if (!response.ok) {
         throw new Error("Failed to delete snippet")
       }
+
+      // Invalidate both server and client caches
+      await invalidateSnippetsCache()
+
+      // Invalidate all admin-related caches
+      invalidateCacheByPrefix("admin")
 
       router.refresh()
 
