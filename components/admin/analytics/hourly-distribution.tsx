@@ -12,18 +12,22 @@ interface HourlyDistributionProps {
 
 export function HourlyDistribution({ data }: HourlyDistributionProps) {
   // Format hours for better display
-  const formattedData = data.map((item) => ({
-    ...item,
-    formattedHour: `${item.hour}:00`,
-  }))
+  const formattedData = data.map((item) => {
+    const hour = Number.parseInt(item.hour, 10)
+    return {
+      ...item,
+      formattedHour: `${hour}:00`,
+      hour: item.hour,
+    }
+  })
 
   return (
-    <Card className="col-span-1">
+    <Card>
       <CardHeader>
-        <CardTitle>Hourly Activity (UTC)</CardTitle>
+        <CardTitle>Hourly Creation Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        {data.some((item) => item.count > 0) ? (
+        {data.length > 0 ? (
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -36,13 +40,13 @@ export function HourlyDistribution({ data }: HourlyDistributionProps) {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="formattedHour" tick={{ fontSize: 10 }} interval={3} />
+                <XAxis dataKey="formattedHour" interval={3} tickFormatter={(value) => value.split(":")[0]} />
                 <YAxis />
                 <Tooltip
-                  formatter={(value: number) => [`${value} snippets`, "Created"]}
-                  labelFormatter={(label) => `Hour: ${label} UTC`}
+                  formatter={(value: number) => [`${value} snippets`, "Count"]}
+                  labelFormatter={(hour) => `Hour: ${hour}`}
                 />
-                <Bar dataKey="count" fill="#0ea5e9" name="Snippets" />
+                <Bar dataKey="count" fill="#8b5cf6" name="Snippets Created" />
               </BarChart>
             </ResponsiveContainer>
           </div>

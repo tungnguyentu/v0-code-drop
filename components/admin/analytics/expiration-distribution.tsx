@@ -10,17 +10,16 @@ interface ExpirationDistributionProps {
   }>
 }
 
-// Custom colors for the pie chart
-const COLORS = ["#10b981", "#f59e0b", "#3b82f6", "#8b5cf6"]
+const COLORS = ["#10b981", "#0ea5e9", "#f59e0b", "#f43f5e"]
 
 export function ExpirationDistribution({ data }: ExpirationDistributionProps) {
   return (
-    <Card className="col-span-1">
+    <Card>
       <CardHeader>
-        <CardTitle>Expiration Settings</CardTitle>
+        <CardTitle>Expiration Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        {data.some((item) => item.value > 0) ? (
+        {data.length > 0 ? (
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -32,13 +31,17 @@ export function ExpirationDistribution({ data }: ExpirationDistributionProps) {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  nameKey="name"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [`${value} snippets`, "Count"]} />
+                <Tooltip
+                  formatter={(value: number) => [`${value} snippets`, "Count"]}
+                  labelFormatter={(name) => `Expiration: ${name}`}
+                />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

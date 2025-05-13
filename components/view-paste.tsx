@@ -114,14 +114,14 @@ export function ViewPaste({ paste }: ViewPasteProps) {
           </div>
         </div>
       </div>
-      <div className="relative">
-        <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+      <div>
+        <div className="flex items-center justify-end gap-2 p-2 bg-gray-50 border-b border-gray-100">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
+                className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
               >
                 <Palette className="h-4 w-4" />
                 <span>{getCurrentThemeLabel()}</span>
@@ -143,7 +143,7 @@ export function ViewPaste({ paste }: ViewPasteProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-1 bg-white/80 text-gray-700 hover:bg-white hover:text-emerald-700 backdrop-blur-sm"
+            className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
             onClick={copyToClipboard}
           >
             {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}

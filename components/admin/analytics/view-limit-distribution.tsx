@@ -11,8 +11,14 @@ interface ViewLimitDistributionProps {
 }
 
 export function ViewLimitDistribution({ data }: ViewLimitDistributionProps) {
+  // Format data for display
+  const formattedData = data.map((item) => ({
+    name: item.name === "unlimited" ? "Unlimited" : item.name,
+    value: item.value,
+  }))
+
   return (
-    <Card className="col-span-1">
+    <Card>
       <CardHeader>
         <CardTitle>View Limit Distribution</CardTitle>
       </CardHeader>
@@ -21,7 +27,7 @@ export function ViewLimitDistribution({ data }: ViewLimitDistributionProps) {
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={data}
+                data={formattedData}
                 margin={{
                   top: 20,
                   right: 30,
@@ -32,8 +38,11 @@ export function ViewLimitDistribution({ data }: ViewLimitDistributionProps) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value: number) => [`${value} snippets`, "Count"]} />
-                <Bar dataKey="value" fill="#14b8a6" name="Snippets" />
+                <Tooltip
+                  formatter={(value: number) => [`${value} snippets`, "Count"]}
+                  labelFormatter={(name) => `View Limit: ${name}`}
+                />
+                <Bar dataKey="value" fill="#0ea5e9" name="Snippets" />
               </BarChart>
             </ResponsiveContainer>
           </div>
