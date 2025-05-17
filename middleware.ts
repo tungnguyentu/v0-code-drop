@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Get the pathname of the request
   const path = request.nextUrl.pathname
 
+  // Create a response object
+  const res = NextResponse.next()
+
   // Skip auth check for login page and API routes
   if (path === "/admin/login" || path.startsWith("/api/")) {
-    return NextResponse.next()
+    return res
   }
 
   // Check if the path starts with /admin
@@ -20,7 +23,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return res
 }
 
 // Configure the paths that should be processed by this middleware
