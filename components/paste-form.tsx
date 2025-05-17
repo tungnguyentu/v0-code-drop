@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Check, Copy, Eye, EyeOff, Loader2, Lock } from "lucide-react"
 import { createPaste } from "@/app/actions"
@@ -15,7 +15,6 @@ import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
 import { detectLanguage } from "@/lib/language-detection"
-import { toast } from "@/components/ui/use-toast"
 
 export function PasteForm() {
   const router = useRouter()
@@ -34,33 +33,15 @@ export function PasteForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // Handle content change with language detection
-  const handleContentChange = useCallback(
-    (newContent: string) => {
-      setContent(newContent)
-
-      // Only attempt to detect language if we're still using the default language
-      // or if the content is being pasted (significant change in length)
-      const contentLengthChange = Math.abs(newContent.length - content.length)
-      const isProbablyPaste = contentLengthChange > 10
-
-      if (language === "plaintext" || isProbablyPaste) {
-        const detectedLang = detectLanguage(newContent)
-
-        if (detectedLang !== "plaintext") {
-          setLanguage(detectedLang)
-
-          // Show a toast notification about the detected language
-          toast({
-            title: "Language detected",
-            description: `Detected ${LANGUAGE_OPTIONS.find((l) => l.value === detectedLang)?.label || detectedLang}`,
-            duration: 3000,
-          })
-        }
+  // Auto-detect language when content changes
+  useEffect(() => {
+    if (content.trim().length > 10) {
+      const detectedLang = detectLanguage(content)
+      if (detectedLang !== "plaintext" || language === "plaintext") {
+        setLanguage(detectedLang)
       }
-    },
-    [content, language],
-  )
+    }
+  }, [content])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,11 +63,6 @@ export function PasteForm() {
       setPasteUrl(url)
     } catch (error) {
       console.error("Error creating paste:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create snippet. Please try again.",
-        variant: "destructive",
-      })
     } finally {
       setIsSubmitting(false)
     }
@@ -99,11 +75,6 @@ export function PasteForm() {
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
-      toast({
-        title: "Error",
-        description: "Failed to copy to clipboard",
-        variant: "destructive",
-      })
     }
   }
 
@@ -117,6 +88,17 @@ export function PasteForm() {
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
+  }
+
+  // Handle content paste event for language detection
+  const handleContentPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData.getData("text")
+    if (pastedText && pastedText.length > 10) {
+      const detectedLang = detectLanguage(pastedText)
+      if (detectedLang !== "plaintext" || language === "plaintext") {
+        setLanguage(detectedLang)
+      }
+    }
   }
 
   return (
@@ -187,8 +169,19 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <CodeEditor value={content} onChange={handleContentChange} language={language} theme={theme} />
+              <CodeEditor
+                value={content}
+                onChange={setContent}
+                language={language}
+                theme={theme}
+                onPaste={handleContentPaste}
+              />
             </div>
+            {content.length > 10 && language !== "plaintext" && (
+              <p className="mt-1 text-xs text-emerald-600">
+                Language auto-detected: {LANGUAGE_OPTIONS.find((l) => l.value === language)?.label || language}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

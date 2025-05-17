@@ -12,9 +12,10 @@ interface CodeEditorProps {
   language: string
   theme?: string
   className?: string
+  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void
 }
 
-export function CodeEditor({ value, onChange, language, theme = "vs", className }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, language, theme = "vs", className, onPaste }: CodeEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Handle tab key to insert spaces instead of changing focus
@@ -77,6 +78,7 @@ export function CodeEditor({ value, onChange, language, theme = "vs", className 
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={handleKeyDown}
+      onPaste={onPaste}
       placeholder="Paste your code or text here..."
       className={cn(
         "min-h-[300px] font-mono text-sm resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0",

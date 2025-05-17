@@ -1,4 +1,4 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
   public: {
@@ -17,7 +17,6 @@ export interface Database {
           password_hash: string | null
           is_protected: boolean
           theme: string | null
-          user_id: string | null
         }
         Insert: {
           id?: string
@@ -32,7 +31,6 @@ export interface Database {
           password_hash?: string | null
           is_protected?: boolean
           theme?: string | null
-          user_id?: string | null
         }
         Update: {
           id?: string
@@ -47,7 +45,6 @@ export interface Database {
           password_hash?: string | null
           is_protected?: boolean
           theme?: string | null
-          user_id?: string | null
         }
       }
       admin_sessions: {
@@ -97,26 +94,6 @@ export interface Database {
           created_at?: string
           status?: string
           is_read?: boolean
-        }
-      }
-      user_profiles: {
-        Row: {
-          id: string
-          user_id: string
-          subscription_status: string | null
-          subscription_end_date: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          subscription_status?: string | null
-          subscription_end_date?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          subscription_status?: string | null
-          subscription_end_date?: string | null
         }
       }
     }

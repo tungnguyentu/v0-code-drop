@@ -6,7 +6,6 @@ import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
-import { getCurrentUser } from "./actions/auth"
 
 interface CreatePasteParams {
   title: string
@@ -28,10 +27,6 @@ export async function createPaste({
   theme,
 }: CreatePasteParams): Promise<string> {
   const supabase = createServerClient()
-
-  // Get current user if logged in
-  const user = await getCurrentUser()
-  const userId = user?.id || null
 
   // Generate a short ID for the paste URL
   const shortId = nanoid(8)
@@ -71,7 +66,6 @@ export async function createPaste({
       password_hash: passwordHash,
       is_protected: isProtected,
       theme,
-      user_id: userId, // Associate with user if logged in
     })
     .select("short_id")
     .single()
@@ -158,7 +152,6 @@ export async function getPasteById(shortId: string) {
     viewCount: paste.view_count,
     isProtected: paste.is_protected,
     theme: paste.theme || "vs",
-    userId: paste.user_id, // Include the user_id
   }
 }
 
@@ -201,4 +194,28 @@ export async function cleanupExpiredPastes() {
   }
 
   revalidatePath("/")
+}
+
+// New function to delete a paste
+export async function deletePaste(shortId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = createServerClient()
+
+    // Delete the paste
+    const { error } = await supabase.from("pastes").delete().eq("short_id", shortId)
+
+    if (error) {
+      console.error("Error deleting paste:", error)
+      return { success: false, message: "Failed to delete snippet" }
+    }
+
+    // Invalidate caches
+    invalidateCacheByPrefix("admin")
+    invalidateCacheByPrefix("snippets")
+
+    return { success: true, message: "Snippet deleted successfully" }
+  } catch (error) {
+    console.error("Error in deletePaste:", error)
+    return { success: false, message: "An unexpected error occurred" }
+  }
 }

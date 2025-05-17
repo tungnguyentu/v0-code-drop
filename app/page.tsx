@@ -1,12 +1,14 @@
 import { PasteForm } from "@/components/paste-form"
-import { Header } from "@/components/header"
+import { Logo } from "@/components/logo"
 import { Footer } from "@/components/footer"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50">
       <div className="container mx-auto px-4 py-8">
-        <Header />
+        <header className="mb-8 flex items-center justify-between">
+          <Logo />
+        </header>
 
         <main>
           <section className="mx-auto max-w-4xl">

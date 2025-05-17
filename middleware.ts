@@ -1,22 +1,13 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  const res = NextResponse.next()
-  
-  // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient({ req: request, res })
-
-  // Refresh session if expired - this will set the refresh token as a cookie
-  const { data: { session }, error } = await supabase.auth.getSession()
-
+export function middleware(request: NextRequest) {
   // Get the pathname of the request
   const path = request.nextUrl.pathname
 
   // Skip auth check for login page and API routes
   if (path === "/admin/login" || path.startsWith("/api/")) {
-    return res
+    return NextResponse.next()
   }
 
   // Check if the path starts with /admin
@@ -29,18 +20,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Check if the path starts with /account
-  if (path.startsWith("/account")) {
-    // If no session, redirect to login
-    if (!session) {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
-    }
-  }
-
-  return res
+  return NextResponse.next()
 }
 
 // Configure the paths that should be processed by this middleware
 export const config = {
-  matcher: ["/admin/:path*", "/account/:path*", "/auth/callback"]
+  matcher: ["/admin/:path*"],
 }

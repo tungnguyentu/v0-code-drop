@@ -1,236 +1,169 @@
-// Common language patterns and signatures
+// Language detection patterns
 const LANGUAGE_PATTERNS = [
   {
-    language: "javascript",
+    name: "javascript",
     patterns: [
-      /\bconst\b|\blet\b|\bvar\b|\bfunction\b|\bimport\b.*\bfrom\b|\bexport\b|\bclass\b.*\bextends\b|\bconsole\.log\(/,
-      /\bdocument\b|\bwindow\b|\bPromise\b|\basync\b.*\bawait\b/,
-      /=>/,
-      /\.then$$.*$$|\\.catch$$.*$$/,
+      /\bconst\b|\blet\b|\bvar\b|\bfunction\b|\bimport\b|\bexport\b|\bclass\b|\bconsole\.log\b/g,
+      /\bdocument\b|\bwindow\b|\bfetch\b|\basync\b|\bawait\b|\b=>\b/g,
+      /\$$$'\w+'$$|\$$$"\w+"$$/g, // jQuery patterns
     ],
     extensions: [".js", ".jsx", ".mjs"],
   },
   {
-    language: "typescript",
+    name: "typescript",
     patterns: [
-      /\binterface\b|\btype\b|\bnamespace\b|\benum\b|\bReadonly\b/,
-      /:\s*(string|number|boolean|any|unknown|never|void)\b/,
-      /<.*>/,
-      /import\s+{\s*.*\s*}\s+from/,
+      /\binterface\b|\btype\b|\bnamespace\b|\benum\b|\bimport\s+{\s*[\w\s,]+\s*}\s+from\b/g,
+      /:\s*(string|number|boolean|any|unknown|never|void)\b/g,
+      /<[A-Z]\w+>|\bReadonly<|\bPartial<|\bPick<|\bRecord</g,
     ],
     extensions: [".ts", ".tsx"],
   },
   {
-    language: "html",
+    name: "html",
     patterns: [
-      /<!DOCTYPE\s+html>|<html>|<\/html>|<head>|<\/head>|<body>|<\/body>/i,
-      /<div>|<span>|<p>|<a\s+href|<img\s+src|<ul>|<li>/i,
-      /<h[1-6]>|<\/h[1-6]>/i,
-      /<script>|<style>|<link\s+rel="stylesheet"/i,
+      /<(!DOCTYPE|html|head|body|div|span|h[1-6]|p|a|img|ul|ol|li|table|form|input|button)/g,
+      /<\/?(div|span|p|a|img|ul|ol|li|table|tr|td|th|form|input|button|html|head|body)>/g,
     ],
     extensions: [".html", ".htm"],
   },
   {
-    language: "css",
+    name: "css",
     patterns: [
-      /\b[.#][\w-]+\s*{/,
-      /@media\b|@import\b|@keyframes\b/,
-      /\b(margin|padding|border|font|color|background|display|position|width|height):/,
-      /\b(flex|grid|box-shadow|transition|animation|transform):/,
+      /\b(body|html|div|span|p|a|h[1-6])\s*{/g,
+      /@media\b|@import\b|@keyframes\b/g,
+      /\b(margin|padding|border|font|color|background|display|position|width|height):/g,
     ],
     extensions: [".css"],
   },
   {
-    language: "python",
+    name: "python",
     patterns: [
-      /\bdef\b|\bclass\b|\bimport\b|\bfrom\b.*\bimport\b/,
-      /\bif\b.*:|\bfor\b.*:|\bwhile\b.*:|\btry\b:|\bexcept\b:/,
-      /\bprint\(|\brange\(|\blen\(/,
-      /\bself\b|\b__init__\b|\b__main__\b/,
+      /\bdef\s+\w+\s*$$|\bclass\s+\w+\s*(\([\w\s,]*$$)?:/g,
+      /\bimport\s+\w+|\bfrom\s+\w+\s+import\b/g,
+      /\bif\s+__name__\s*==\s*('|")__main__('|"):/g,
     ],
     extensions: [".py"],
   },
   {
-    language: "java",
+    name: "java",
     patterns: [
-      /\bpublic\b|\bprivate\b|\bprotected\b|\bclass\b|\binterface\b|\benum\b/,
-      /\bextends\b|\bimplements\b|\bthrows\b|\btry\b|\bcatch\b|\bfinally\b/,
-      /\bSystem\.out\.println\(|\bString\b|\bInteger\b|\bBoolean\b/,
-      /@Override\b|@Deprecated\b/,
+      /\bpublic\s+(static\s+)?(class|void|int|String)\b/g,
+      /\bprivate\b|\bprotected\b|\bimport\s+java\./g,
+      /\bSystem\.out\.print(ln)?\(/g,
     ],
     extensions: [".java"],
   },
   {
-    language: "csharp",
+    name: "csharp",
     patterns: [
-      /\bnamespace\b|\busing\b.*?;|\bclass\b|\bpublic\b|\bprivate\b|\bprotected\b/,
-      /\bvoid\b|\bstring\b|\bint\b|\bbool\b|\bvar\b/,
-      /\bConsole\.Write|\bList<|\bDictionary<|\.NET\b/,
-      /\basync\b.*\bawait\b|\bTask<|\bIEnumerable<|\bLINQ\b/,
+      /\bnamespace\s+\w+(\.\w+)*\b/g,
+      /\busing\s+\w+(\.\w+)*;/g,
+      /\bpublic\s+(static\s+)?(class|void|int|string)\b/g,
+      /\bConsole\.Write(Line)?\(/g,
     ],
     extensions: [".cs"],
   },
   {
-    language: "go",
-    patterns: [
-      /\bpackage\b|\bimport\b|\bfunc\b|\bstruct\b|\binterface\b/,
-      /\bgo\b|\bchan\b|\bdefer\b|\bselect\b/,
-      /\bfmt\.Print|\bmap\[|\bmake\(|\bnew\(/,
-      /\berror\b|\bnil\b|\biota\b/,
-    ],
-    extensions: [".go"],
-  },
-  {
-    language: "rust",
-    patterns: [
-      /\bfn\b|\blet\b|\bmut\b|\bstruct\b|\benum\b|\bimpl\b|\btrait\b/,
-      /\bmatch\b|\bOption<|\bResult<|\bSome\(|\bNone\b|\bOk\(|\bErr\(/,
-      /\bpub\b|\buse\b|\bcrate\b|\bmod\b/,
-      /\bvec!\b|\bprintln!\b|\bformat!\b/,
-    ],
-    extensions: [".rs"],
-  },
-  {
-    language: "php",
-    patterns: [
-      /<\?php|\becho\b|\bfunction\b|\bclass\b|\bpublic\b|\bprivate\b/,
-      /\$[a-zA-Z_][a-zA-Z0-9_]*\b/,
-      /\barray\(|\bforeach\b|\bas\b/,
-      /\bnew\b|\bextends\b|\bimplements\b/,
-    ],
+    name: "php",
+    patterns: [/<\?php|\becho\b|\bfunction\b/g, /\$\w+\s*=/g],
     extensions: [".php"],
   },
   {
-    language: "ruby",
+    name: "ruby",
     patterns: [
-      /\bdef\b|\bclass\b|\bmodule\b|\battr_accessor\b/,
-      /\bend\b|\bdo\b|\|.*\|/,
-      /\bputs\b|\brequire\b|\brequire_relative\b/,
-      /\bnil\b|\btrue\b|\bfalse\b/,
+      /\bdef\s+\w+\b|\bclass\s+\w+\b|\bmodule\s+\w+\b/g,
+      /\brequire\b|\binclude\b|\battr_accessor\b/g,
+      /\bputs\b|\bp\b/g,
     ],
     extensions: [".rb"],
   },
   {
-    language: "sql",
+    name: "go",
+    patterns: [/\bfunc\s+\w+\s*\(|\bpackage\s+\w+\b/g, /\bimport\s+\(/g, /\bfmt\.Print(ln|f)?\(/g],
+    extensions: [".go"],
+  },
+  {
+    name: "rust",
+    patterns: [/\bfn\s+\w+\s*\(|\blet\s+mut\b/g, /\bstruct\s+\w+\s*{|\benum\s+\w+\s*{/g, /\bimpl\b|\bpub\b|\buse\b/g],
+    extensions: [".rs"],
+  },
+  {
+    name: "json",
+    patterns: [/^[\s\n]*{[\s\S]*}[\s\n]*$/g, /"[\w\s]+"\s*:\s*("[^"]*"|\d+|true|false|null|\{|\[)/g],
+    extensions: [".json"],
+  },
+  {
+    name: "markdown",
+    patterns: [/^#\s+|\n#{1,6}\s+/g, /\*\*[\w\s]+\*\*|__[\w\s]+__/g, /\[[\w\s]+\]$$https?:\/\/[^\s)]+$$/g],
+    extensions: [".md", ".markdown"],
+  },
+  {
+    name: "yaml",
+    patterns: [/^---[\s\S]*?(\n---|\n\.\.\.)/g, /^\w+:\s*$/gm, /^\s{2,}\w+:\s+/gm],
+    extensions: [".yml", ".yaml"],
+  },
+  {
+    name: "sql",
     patterns: [
-      /\bSELECT\b.*\bFROM\b|\bINSERT INTO\b|\bUPDATE\b.*\bSET\b|\bDELETE FROM\b/i,
-      /\bWHERE\b|\bGROUP BY\b|\bORDER BY\b|\bJOIN\b/i,
-      /\bCREATE TABLE\b|\bALTER TABLE\b|\bDROP TABLE\b/i,
-      /\bINDEX\b|\bPRIMARY KEY\b|\bFOREIGN KEY\b/i,
+      /\b(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|FROM|WHERE|GROUP BY|ORDER BY|HAVING)\b/gi,
+      /\b(JOIN|INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN|UNION|INTERSECT)\b/gi,
     ],
     extensions: [".sql"],
   },
   {
-    language: "json",
-    patterns: [/^\s*{[\s\S]*}\s*$/, /"\w+":\s*(?:"[^"]*"|[\d.]+|true|false|null|\{|\[)/],
-    extensions: [".json"],
-  },
-  {
-    language: "yaml",
-    patterns: [/^\s*[\w-]+:\s*.*$/m, /^\s*-\s+[\w-]+:\s*.*$/m, /^\s*-\s+.*$/m],
-    extensions: [".yml", ".yaml"],
-  },
-  {
-    language: "markdown",
-    patterns: [
-      /^#\s+.*$|^##\s+.*$|^###\s+.*$/m,
-      /\*\*.*\*\*|__.*__|_.*_|\*.*\*/,
-      /\[.*\]$$.*$$/,
-      /^>\s+.*$|^-\s+.*$|^[0-9]+\.\s+.*$/m,
-    ],
-    extensions: [".md", ".markdown"],
-  },
-  {
-    language: "bash",
-    patterns: [
-      /^#!/,
-      /\becho\b|\bexport\b|\bsource\b|\balias\b/,
-      /\$\{.*\}|\$$$.*$$|\$[a-zA-Z0-9_]+/,
-      /\bif\b.*;\s*then\b|\bfor\b.*;\s*do\b|\bwhile\b.*;\s*do\b/,
-    ],
+    name: "bash",
+    patterns: [/^#!\/bin\/(ba)?sh/g, /\becho\b|\bexport\b|\bsource\b/g, /\$$$\w+$$|\$\{\w+\}/g],
     extensions: [".sh", ".bash"],
-  },
-  {
-    language: "cpp",
-    patterns: [
-      /#include\s*<.*>|#include\s*".*"/,
-      /\bstd::|::\b|\bnamespace\b|\btemplate\b/,
-      /\bclass\b.*\{|\bstruct\b.*\{|\benum\b.*\{/,
-      /\bconst\b|\bvoid\b|\bint\b|\bfloat\b|\bdouble\b|\bchar\b|\bbool\b/,
-    ],
-    extensions: [".cpp", ".cc", ".cxx", ".hpp", ".h"],
-  },
-  {
-    language: "swift",
-    patterns: [
-      /\bfunc\b|\bvar\b|\blet\b|\bclass\b|\bstruct\b|\benum\b|\bprotocol\b/,
-      /\bguard\b|\bif\b|\belse\b|\bswitch\b|\bcase\b/,
-      /\bimport\b\s+\w+/,
-      /\boptional\b|\bunwrap\b|\bnil\b/,
-    ],
-    extensions: [".swift"],
-  },
-  {
-    language: "kotlin",
-    patterns: [
-      /\bfun\b|\bval\b|\bvar\b|\bclass\b|\bobject\b|\binterface\b/,
-      /\bprivate\b|\bprotected\b|\bpublic\b|\binternal\b/,
-      /\bimport\b\s+\w+/,
-      /\bnull\b|\bnullable\b|\b\?\b/,
-    ],
-    extensions: [".kt", ".kts"],
   },
 ]
 
 /**
- * Detects the programming language from code content
- * @param content The code content to analyze
- * @param filename Optional filename which can help with detection via extension
- * @returns The detected language or 'plaintext' if no match
+ * Detect the programming language from code content
  */
 export function detectLanguage(content: string, filename?: string): string {
   if (!content || content.trim().length === 0) {
     return "plaintext"
   }
 
-  // First try to detect by filename extension if provided
+  // First try to detect from filename if provided
   if (filename) {
     const extension = filename.substring(filename.lastIndexOf(".")).toLowerCase()
     for (const lang of LANGUAGE_PATTERNS) {
       if (lang.extensions.includes(extension)) {
-        return lang.language
+        return lang.name
       }
     }
   }
 
-  // Create a scoring system for each language
+  // Score each language based on pattern matches
   const scores: Record<string, number> = {}
 
-  // Initialize scores
-  LANGUAGE_PATTERNS.forEach((lang) => {
-    scores[lang.language] = 0
-  })
-
-  // Check each language's patterns against the content
-  LANGUAGE_PATTERNS.forEach((lang) => {
-    lang.patterns.forEach((pattern) => {
-      if (pattern.test(content)) {
-        scores[lang.language] += 1
+  for (const lang of LANGUAGE_PATTERNS) {
+    let score = 0
+    for (const pattern of lang.patterns) {
+      const matches = content.match(pattern)
+      if (matches) {
+        score += matches.length
       }
-    })
-  })
+    }
+    scores[lang.name] = score
+  }
 
   // Find the language with the highest score
   let bestMatch = "plaintext"
   let highestScore = 0
 
-  for (const [language, score] of Object.entries(scores)) {
+  for (const [lang, score] of Object.entries(scores)) {
     if (score > highestScore) {
       highestScore = score
-      bestMatch = language
+      bestMatch = lang
     }
   }
 
-  // Only return a match if we have some confidence (at least 2 patterns matched)
-  return highestScore >= 2 ? bestMatch : "plaintext"
+  // If the highest score is too low, default to plaintext
+  if (highestScore < 2) {
+    return "plaintext"
+  }
+
+  return bestMatch
 }
