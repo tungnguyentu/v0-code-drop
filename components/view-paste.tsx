@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Check, Copy, Clock, Eye, Palette, Trash2, Loader2 } from "lucide-react"
+import { Check, Copy, Clock, Eye, Palette } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import {
@@ -22,18 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { THEME_OPTIONS } from "@/lib/constants"
-import { deletePaste } from "@/app/actions"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { DeleteSnippet } from "@/components/delete-snippet"
 
 interface Paste {
   id: string
@@ -52,12 +40,8 @@ interface ViewPasteProps {
 }
 
 export function ViewPaste({ paste }: ViewPasteProps) {
-  const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(paste.theme || "vs")
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleteResult, setDeleteResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const copyToClipboard = async () => {
     try {
@@ -66,28 +50,6 @@ export function ViewPaste({ paste }: ViewPasteProps) {
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
-    }
-  }
-
-  const handleDelete = async () => {
-    setIsDeleting(true)
-    try {
-      const result = await deletePaste(paste.id)
-      setDeleteResult(result)
-
-      if (result.success) {
-        // Redirect to home page after 2 seconds
-        setTimeout(() => {
-          router.push("/")
-        }, 2000)
-      }
-    } catch (error) {
-      setDeleteResult({
-        success: false,
-        message: "An error occurred while deleting the snippet",
-      })
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -126,32 +88,6 @@ export function ViewPaste({ paste }: ViewPasteProps) {
     return theme ? theme.label : "Light (VS)"
   }
 
-  // If we have a delete result, show it
-  if (deleteResult) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          {deleteResult.success ? (
-            <Check className="h-8 w-8 text-emerald-600" />
-          ) : (
-            <Trash2 className="h-8 w-8 text-red-600" />
-          )}
-        </div>
-        <h3 className="mb-2 text-xl font-medium">{deleteResult.success ? "Snippet Deleted" : "Delete Failed"}</h3>
-        <p className="text-gray-500 mb-6">{deleteResult.message}</p>
-        {deleteResult.success && <p className="text-sm text-gray-500">Redirecting to home page...</p>}
-        {!deleteResult.success && (
-          <Button
-            onClick={() => setDeleteResult(null)}
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-          >
-            Back to Snippet
-          </Button>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20">
       <div className="border-b border-gray-100 bg-gray-50 p-6">
@@ -180,77 +116,44 @@ export function ViewPaste({ paste }: ViewPasteProps) {
         </div>
       </div>
       <div>
-        <div className="flex items-center justify-end gap-2 p-2 bg-gray-50 border-b border-gray-100">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
-              >
-                <Palette className="h-4 w-4" />
-                <span>{getCurrentThemeLabel()}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {THEME_OPTIONS.map((theme) => (
-                <DropdownMenuItem
-                  key={theme.value}
-                  onClick={() => setCurrentTheme(theme.value)}
-                  className={currentTheme === theme.value ? "bg-gray-100" : ""}
-                >
-                  {theme.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-100">
+          <DeleteSnippet snippetId={paste.id} />
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
-            onClick={copyToClipboard}
-          >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copied!" : "Copy"}
-          </Button>
-
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-700 hover:text-red-600">
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this snippet. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleDelete()
-                  }}
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                  disabled={isDeleting}
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
                 >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <Palette className="h-4 w-4" />
+                  <span>{getCurrentThemeLabel()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {THEME_OPTIONS.map((theme) => (
+                  <DropdownMenuItem
+                    key={theme.value}
+                    onClick={() => setCurrentTheme(theme.value)}
+                    className={currentTheme === theme.value ? "bg-gray-100" : ""}
+                  >
+                    {theme.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
+              onClick={copyToClipboard}
+            >
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+          </div>
         </div>
         <div className="max-h-[600px] overflow-auto">
           <SyntaxHighlighter

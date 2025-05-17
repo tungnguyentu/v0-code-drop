@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Eye, EyeOff, Loader2, Lock } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, Loader2, Lock, Trash2 } from "lucide-react"
 import { createPaste } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
-import { detectLanguage } from "@/lib/language-detection"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function PasteForm() {
   const router = useRouter()
@@ -26,29 +26,21 @@ export function PasteForm() {
   const [theme, setTheme] = useState("vs")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pasteUrl, setPasteUrl] = useState("")
+  const [deletionKey, setDeletionKey] = useState("")
   const [copied, setCopied] = useState(false)
+  const [keysCopied, setKeysCopied] = useState(false)
 
   // Password protection
   const [isPasswordProtected, setIsPasswordProtected] = useState(false)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // Auto-detect language when content changes
-  useEffect(() => {
-    if (content.trim().length > 10) {
-      const detectedLang = detectLanguage(content)
-      if (detectedLang !== "plaintext" || language === "plaintext") {
-        setLanguage(detectedLang)
-      }
-    }
-  }, [content])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      const pasteId = await createPaste({
+      const result = await createPaste({
         title,
         content,
         language,
@@ -59,8 +51,9 @@ export function PasteForm() {
       })
 
       // Generate a shareable URL
-      const url = `${window.location.origin}/${pasteId}`
+      const url = `${window.location.origin}/${result.shortId}`
       setPasteUrl(url)
+      setDeletionKey(result.deletionKey)
     } catch (error) {
       console.error("Error creating paste:", error)
     } finally {
@@ -78,6 +71,17 @@ export function PasteForm() {
     }
   }
 
+  const copyDeletionInfo = async () => {
+    try {
+      const textToCopy = `Snippet URL: ${pasteUrl}\nDeletion Key: ${deletionKey}`
+      await navigator.clipboard.writeText(textToCopy)
+      setKeysCopied(true)
+      setTimeout(() => setKeysCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy deletion info:", err)
+    }
+  }
+
   const createNewPaste = () => {
     setTitle("")
     setContent("")
@@ -88,17 +92,7 @@ export function PasteForm() {
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
-  }
-
-  // Handle content paste event for language detection
-  const handleContentPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const pastedText = e.clipboardData.getData("text")
-    if (pastedText && pastedText.length > 10) {
-      const detectedLang = detectLanguage(pastedText)
-      if (detectedLang !== "plaintext" || language === "plaintext") {
-        setLanguage(detectedLang)
-      }
-    }
+    setDeletionKey("")
   }
 
   return (
@@ -129,6 +123,35 @@ export function PasteForm() {
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
+
+          <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
+            <AlertDescription className="flex flex-col gap-2">
+              <div className="flex items-start gap-2">
+                <Trash2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Save this deletion key to remove your snippet later</p>
+                  <p className="text-sm mt-1">You won't be able to see this key again after you leave this page.</p>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  value={deletionKey}
+                  readOnly
+                  className="font-mono text-sm border-amber-200 bg-amber-50/50"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyDeletionInfo}
+                  className="flex-shrink-0 border-amber-200 bg-amber-50/50 hover:bg-amber-100 text-amber-800"
+                >
+                  {keysCopied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {keysCopied ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
 
           {isPasswordProtected && (
             <div className="mb-6 rounded-md bg-amber-50 p-4 text-amber-700 flex items-center">
@@ -169,19 +192,8 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <CodeEditor
-                value={content}
-                onChange={setContent}
-                language={language}
-                theme={theme}
-                onPaste={handleContentPaste}
-              />
+              <CodeEditor value={content} onChange={setContent} language={language} theme={theme} />
             </div>
-            {content.length > 10 && language !== "plaintext" && (
-              <p className="mt-1 text-xs text-emerald-600">
-                Language auto-detected: {LANGUAGE_OPTIONS.find((l) => l.value === language)?.label || language}
-              </p>
-            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

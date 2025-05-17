@@ -25,11 +25,14 @@ export async function createPaste({
   viewLimit,
   password,
   theme,
-}: CreatePasteParams): Promise<string> {
+}: CreatePasteParams): Promise<{ shortId: string; deletionKey: string }> {
   const supabase = createServerClient()
 
   // Generate a short ID for the paste URL
   const shortId = nanoid(8)
+
+  // Generate a deletion key
+  const deletionKey = nanoid(16)
 
   // Calculate expiration date
   let expiresAt = null
@@ -66,6 +69,7 @@ export async function createPaste({
       password_hash: passwordHash,
       is_protected: isProtected,
       theme,
+      deletion_key: deletionKey,
     })
     .select("short_id")
     .single()
@@ -79,7 +83,7 @@ export async function createPaste({
   invalidateCacheByPrefix("admin")
   invalidateCacheByPrefix("snippets")
 
-  return shortId
+  return { shortId, deletionKey }
 }
 
 export async function getPasteById(shortId: string) {
@@ -183,6 +187,44 @@ export async function verifyPastePassword(shortId: string, password: string): Pr
   return isValid
 }
 
+// Add a new action to delete a paste with a deletion key
+export async function deletePasteWithKey(
+  shortId: string,
+  deletionKey: string,
+): Promise<{ success: boolean; message: string }> {
+  const supabase = createServerClient()
+
+  // First, verify the deletion key
+  const { data: pastes, error: fetchError } = await supabase
+    .from("pastes")
+    .select("deletion_key")
+    .eq("short_id", shortId)
+    .single()
+
+  if (fetchError || !pastes) {
+    return { success: false, message: "Snippet not found" }
+  }
+
+  // Check if the deletion key matches
+  if (pastes.deletion_key !== deletionKey) {
+    return { success: false, message: "Invalid deletion key" }
+  }
+
+  // Delete the paste
+  const { error: deleteError } = await supabase.from("pastes").delete().eq("short_id", shortId)
+
+  if (deleteError) {
+    console.error("Error deleting paste:", deleteError)
+    return { success: false, message: "Failed to delete snippet" }
+  }
+
+  // Invalidate caches
+  invalidateCacheByPrefix("admin")
+  invalidateCacheByPrefix("snippets")
+
+  return { success: true, message: "Snippet deleted successfully" }
+}
+
 // Add a helper function to clean up expired pastes
 export async function cleanupExpiredPastes() {
   const supabase = createServerClient()
@@ -194,28 +236,4 @@ export async function cleanupExpiredPastes() {
   }
 
   revalidatePath("/")
-}
-
-// New function to delete a paste
-export async function deletePaste(shortId: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const supabase = createServerClient()
-
-    // Delete the paste
-    const { error } = await supabase.from("pastes").delete().eq("short_id", shortId)
-
-    if (error) {
-      console.error("Error deleting paste:", error)
-      return { success: false, message: "Failed to delete snippet" }
-    }
-
-    // Invalidate caches
-    invalidateCacheByPrefix("admin")
-    invalidateCacheByPrefix("snippets")
-
-    return { success: true, message: "Snippet deleted successfully" }
-  } catch (error) {
-    console.error("Error in deletePaste:", error)
-    return { success: false, message: "An unexpected error occurred" }
-  }
 }

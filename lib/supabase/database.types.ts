@@ -17,6 +17,7 @@ export interface Database {
           password_hash: string | null
           is_protected: boolean
           theme: string | null
+          deletion_key: string | null
         }
         Insert: {
           id?: string
@@ -31,6 +32,7 @@ export interface Database {
           password_hash?: string | null
           is_protected?: boolean
           theme?: string | null
+          deletion_key?: string | null
         }
         Update: {
           id?: string
@@ -45,6 +47,7 @@ export interface Database {
           password_hash?: string | null
           is_protected?: boolean
           theme?: string | null
+          deletion_key?: string | null
         }
       }
       admin_sessions: {
