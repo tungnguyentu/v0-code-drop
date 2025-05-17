@@ -1,136 +1,136 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export interface Database {
   public: {
     Tables: {
       pastes: {
         Row: {
-          id: string;
-          short_id: string;
-          title: string | null;
-          content: string;
-          language: string;
-          created_at: string;
-          expires_at: string | null;
-          view_limit: string;
-          view_count: number;
-          password_hash: string | null;
-          is_protected: boolean;
-          theme: string | null;
-          user_id: string | null;
-        };
+          id: string
+          short_id: string
+          title: string | null
+          content: string
+          language: string
+          created_at: string
+          expires_at: string | null
+          view_limit: string
+          view_count: number
+          password_hash: string | null
+          is_protected: boolean
+          theme: string | null
+          user_id: string | null
+        }
         Insert: {
-          id?: string;
-          short_id: string;
-          title?: string | null;
-          content: string;
-          language: string;
-          created_at?: string;
-          expires_at?: string | null;
-          view_limit: string;
-          view_count?: number;
-          password_hash?: string | null;
-          is_protected?: boolean;
-          theme?: string | null;
-          user_id?: string | null;
-        };
+          id?: string
+          short_id: string
+          title?: string | null
+          content: string
+          language: string
+          created_at?: string
+          expires_at?: string | null
+          view_limit: string
+          view_count?: number
+          password_hash?: string | null
+          is_protected?: boolean
+          theme?: string | null
+          user_id?: string | null
+        }
         Update: {
-          id?: string;
-          short_id?: string;
-          title?: string | null;
-          content?: string;
-          language?: string;
-          created_at?: string;
-          expires_at?: string | null;
-          view_limit?: string;
-          view_count?: number;
-          password_hash?: string | null;
-          is_protected?: boolean;
-          theme?: string | null;
-          user_id?: string | null;
-        };
-      };
+          id?: string
+          short_id?: string
+          title?: string | null
+          content?: string
+          language?: string
+          created_at?: string
+          expires_at?: string | null
+          view_limit?: string
+          view_count?: number
+          password_hash?: string | null
+          is_protected?: boolean
+          theme?: string | null
+          user_id?: string | null
+        }
+      }
       admin_sessions: {
         Row: {
-          id: string;
-          token: string;
-          created_at: string;
-          expires_at: string;
-        };
+          id: string
+          token: string
+          created_at: string
+          expires_at: string
+        }
         Insert: {
-          id?: string;
-          token: string;
-          created_at?: string;
-          expires_at: string;
-        };
+          id?: string
+          token: string
+          created_at?: string
+          expires_at: string
+        }
         Update: {
-          id?: string;
-          token?: string;
-          created_at?: string;
-          expires_at?: string;
-        };
-      };
+          id?: string
+          token?: string
+          created_at?: string
+          expires_at?: string
+        }
+      }
       feedback: {
         Row: {
-          id: string;
-          type: string;
-          message: string;
-          email: string | null;
-          created_at: string;
-          status: string;
-          is_read: boolean;
-        };
+          id: string
+          type: string
+          message: string
+          email: string | null
+          created_at: string
+          status: string
+          is_read: boolean
+        }
         Insert: {
-          id?: string;
-          type: string;
-          message: string;
-          email?: string | null;
-          created_at?: string;
-          status?: string;
-          is_read?: boolean;
-        };
+          id?: string
+          type: string
+          message: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
         Update: {
-          id?: string;
-          type?: string;
-          message?: string;
-          email?: string | null;
-          created_at?: string;
-          status?: string;
-          is_read?: boolean;
-        };
-      };
+          id?: string
+          type?: string
+          message?: string
+          email?: string | null
+          created_at?: string
+          status?: string
+          is_read?: boolean
+        }
+      }
       user_profiles: {
         Row: {
-          id: string;
-          user_id: string;
-          subscription_status: string | null;
-          subscription_end_date: string | null;
-        };
+          id: string
+          user_id: string
+          subscription_status: string | null
+          subscription_end_date: string | null
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          subscription_status?: string | null;
-          subscription_end_date?: string | null;
-        };
+          id?: string
+          user_id: string
+          subscription_status?: string | null
+          subscription_end_date?: string | null
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          subscription_status?: string | null;
-          subscription_end_date?: string | null;
-        };
-      };
-    };
+          id?: string
+          user_id?: string
+          subscription_status?: string | null
+          subscription_end_date?: string | null
+        }
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+      [_ in never]: never
+    }
+  }
 }
