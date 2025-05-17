@@ -3,6 +3,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
+import { encryptText } from "@/lib/encryption"
 
 interface EditPasteParams {
   id: string
@@ -28,16 +29,32 @@ export async function editPaste({
 
     const supabase = createServerClient()
 
+    // Prepare update data
+    const updateData: any = {}
+
+    if (title !== undefined) {
+      updateData.title = title
+    }
+
+    if (language !== undefined) {
+      updateData.language = language
+    }
+
+    if (theme !== undefined) {
+      updateData.theme = theme
+    }
+
+    // If content is being updated, encrypt it
+    if (content !== undefined) {
+      const { encryptedText, iv, authTag } = encryptText(content)
+      updateData.content = encryptedText
+      updateData.content_iv = iv
+      updateData.content_auth_tag = authTag
+      updateData.is_encrypted = true
+    }
+
     // Update the paste
-    const { error } = await supabase
-      .from("pastes")
-      .update({
-        title: title !== undefined ? title : undefined,
-        content: content !== undefined ? content : undefined,
-        language: language !== undefined ? language : undefined,
-        theme: theme !== undefined ? theme : undefined,
-      })
-      .eq("short_id", id)
+    const { error } = await supabase.from("pastes").update(updateData).eq("short_id", id)
 
     if (error) {
       console.error("Error updating paste:", error)

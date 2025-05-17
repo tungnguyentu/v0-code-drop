@@ -6,6 +6,7 @@ import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
+import { encryptText, decryptText } from "@/lib/encryption"
 
 interface CreatePasteParams {
   title: string
@@ -52,13 +53,19 @@ export async function createPaste({
     isProtected = true
   }
 
+  // Encrypt the content
+  const { encryptedText, iv, authTag } = encryptText(content)
+
   // Create the paste in the database
   const { data, error } = await supabase
     .from("pastes")
     .insert({
       short_id: shortId,
       title: title || null,
-      content,
+      content: encryptedText,
+      content_iv: iv,
+      content_auth_tag: authTag,
+      is_encrypted: true,
       language,
       expires_at: expiresAt,
       view_limit: viewLimit,
@@ -140,11 +147,22 @@ export async function getPasteById(shortId: string) {
     paste.view_count = newViewCount
   }
 
+  // Decrypt content if it's encrypted
+  let decryptedContent = paste.content
+  if (paste.is_encrypted && paste.content_iv && paste.content_auth_tag) {
+    try {
+      decryptedContent = decryptText(paste.content, paste.content_iv, paste.content_auth_tag)
+    } catch (error) {
+      console.error("Error decrypting paste content:", error)
+      return null
+    }
+  }
+
   // Format the paste for frontend use
   return {
     id: paste.short_id,
     title: paste.title || "",
-    content: paste.content,
+    content: decryptedContent,
     language: paste.language,
     createdAt: paste.created_at,
     expiresAt: paste.expires_at,
