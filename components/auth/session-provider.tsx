@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -38,9 +37,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       const supabase = getSupabaseBrowserClient()
 
       // Get current session
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession()
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
       setSession(currentSession)
 
       if (currentSession?.user) {
@@ -91,5 +88,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  return <AuthContext.Provider value={{ session, user, isLoading, refreshSession }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ session, user, isLoading, refreshSession }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
