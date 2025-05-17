@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Eye, EyeOff, Loader2, Lock, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, Loader2, Lock } from "lucide-react"
 import { createPaste } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
 import { detectLanguage } from "@/lib/language-detection"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "@/components/ui/use-toast"
 
 export function PasteForm() {
   const router = useRouter()
@@ -29,37 +29,38 @@ export function PasteForm() {
   const [pasteUrl, setPasteUrl] = useState("")
   const [copied, setCopied] = useState(false)
 
-  // Language detection state
-  const [detectionResult, setDetectionResult] = useState<{
-    language: string
-    confidence: number
-    confidenceLevel: "high" | "medium" | "low" | "minimum"
-    secondaryLanguage: string | null
-  } | null>(null)
-
   // Password protection
   const [isPasswordProtected, setIsPasswordProtected] = useState(false)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // Auto-detect language when content changes
-  useEffect(() => {
-    if (content.trim().length > 20) {
-      const result = detectLanguage(content)
-      setDetectionResult(result)
+  // Handle content change with language detection
+  const handleContentChange = useCallback(
+    (newContent: string) => {
+      setContent(newContent)
 
-      // Only auto-set the language if we have high or medium confidence
-      // or if the current language is plaintext (default)
-      if (
-        (result.confidenceLevel === "high" || result.confidenceLevel === "medium" || language === "plaintext") &&
-        result.language !== "plaintext"
-      ) {
-        setLanguage(result.language)
+      // Only attempt to detect language if we're still using the default language
+      // or if the content is being pasted (significant change in length)
+      const contentLengthChange = Math.abs(newContent.length - content.length)
+      const isProbablyPaste = contentLengthChange > 10
+
+      if (language === "plaintext" || isProbablyPaste) {
+        const detectedLang = detectLanguage(newContent)
+
+        if (detectedLang !== "plaintext") {
+          setLanguage(detectedLang)
+
+          // Show a toast notification about the detected language
+          toast({
+            title: "Language detected",
+            description: `Detected ${LANGUAGE_OPTIONS.find((l) => l.value === detectedLang)?.label || detectedLang}`,
+            duration: 3000,
+          })
+        }
       }
-    } else {
-      setDetectionResult(null)
-    }
-  }, [content, language])
+    },
+    [content, language],
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,6 +82,11 @@ export function PasteForm() {
       setPasteUrl(url)
     } catch (error) {
       console.error("Error creating paste:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create snippet. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -93,6 +99,11 @@ export function PasteForm() {
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      })
     }
   }
 
@@ -106,56 +117,6 @@ export function PasteForm() {
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
-    setDetectionResult(null)
-  }
-
-  // Handle content paste event for language detection
-  const handleContentPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>, pastedText: string) => {
-    if (pastedText && pastedText.length > 20) {
-      const result = detectLanguage(pastedText)
-      setDetectionResult(result)
-
-      // Only auto-set the language if we have high or medium confidence
-      // or if the current language is plaintext (default)
-      if (
-        (result.confidenceLevel === "high" || result.confidenceLevel === "medium" || language === "plaintext") &&
-        result.language !== "plaintext"
-      ) {
-        setLanguage(result.language)
-      }
-    }
-  }
-
-  // Get confidence indicator color
-  const getConfidenceColor = (level: "high" | "medium" | "low" | "minimum") => {
-    switch (level) {
-      case "high":
-        return "text-emerald-500"
-      case "medium":
-        return "text-blue-500"
-      case "low":
-        return "text-amber-500"
-      case "minimum":
-        return "text-red-500"
-      default:
-        return "text-gray-500"
-    }
-  }
-
-  // Get confidence icon
-  const getConfidenceIcon = (level: "high" | "medium" | "low" | "minimum") => {
-    switch (level) {
-      case "high":
-        return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-      case "medium":
-        return <CheckCircle2 className="h-4 w-4 text-blue-500" />
-      case "low":
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />
-      case "minimum":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
-      default:
-        return null
-    }
   }
 
   return (
@@ -226,51 +187,8 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <CodeEditor
-                value={content}
-                onChange={setContent}
-                language={language}
-                theme={theme}
-                onPaste={handleContentPaste}
-              />
+              <CodeEditor value={content} onChange={handleContentChange} language={language} theme={theme} />
             </div>
-            {detectionResult && content.length > 20 && (
-              <div className="mt-2 flex items-center text-xs">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1">
-                        {getConfidenceIcon(detectionResult.confidenceLevel)}
-                        <span className={getConfidenceColor(detectionResult.confidenceLevel)}>
-                          Language detected:{" "}
-                          {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.language)?.label ||
-                            detectionResult.language}
-                          {detectionResult.secondaryLanguage && detectionResult.confidenceLevel !== "high" && (
-                            <span>
-                              {" "}
-                              (may contain{" "}
-                              {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.secondaryLanguage)?.label ||
-                                detectionResult.secondaryLanguage}
-                              )
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Confidence: {Math.round(detectionResult.confidence * 100)}%</p>
-                      {detectionResult.secondaryLanguage && (
-                        <p>
-                          Alternative:{" "}
-                          {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.secondaryLanguage)?.label ||
-                            detectionResult.secondaryLanguage}
-                        </p>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

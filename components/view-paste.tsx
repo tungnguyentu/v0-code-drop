@@ -2,27 +2,28 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Clock, Eye, Palette, Trash2, Loader2 } from "lucide-react"
+import { Check, Copy, Clock, Eye, Palette, Edit, Trash2, Save, X, AlertTriangle } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import {
-  vs,
+  prism,
   vscDarkPlus,
-  github,
-  dracula,
-  monokai,
+  duotoneDark,
+  duotoneLight,
+  okaidia,
   solarizedlight,
-  solarizedDark,
-  nord,
-  oneLight,
-  oneDark,
-} from "react-syntax-highlighter/dist/esm/styles/prism"
+  tomorrow,
+  twilight,
+} from "react-syntax-highlighter/dist/cjs/styles/prism"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { THEME_OPTIONS } from "@/lib/constants"
-import { deletePaste } from "@/app/actions"
+import { THEME_OPTIONS, LANGUAGE_OPTIONS } from "@/lib/constants"
+import { editPaste, deletePaste } from "@/app/actions/premium"
+import { CodeEditor } from "@/components/code-editor"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { PremiumFeatureModal } from "@/components/premium/premium-feature-modal"
 
 interface Paste {
   id: string
@@ -55,9 +57,14 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(paste.theme || "vs")
+  const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleteResult, setDeleteResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(paste.title)
+  const [editedContent, setEditedContent] = useState(paste.content)
+  const [editedLanguage, setEditedLanguage] = useState(paste.language)
+  const [error, setError] = useState("")
 
   const copyToClipboard = async () => {
     try {
@@ -69,23 +76,63 @@ export function ViewPaste({ paste }: ViewPasteProps) {
     }
   }
 
-  const handleDelete = async () => {
-    setIsDeleting(true)
+  const handleEdit = () => {
+    // In a real app, check if user is premium
+    // For demo, we'll show the premium modal
+    setShowPremiumModal(true)
+    // If they were premium, we'd do:
+    // setIsEditing(true)
+  }
+
+  const handleDelete = () => {
+    // Remove the premium check and modal
+    // setShowPremiumModal(true);
+    // Instead, we'll just proceed with the delete confirmation
+    // The AlertDialog is already in the component, so we don't need to add anything else
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    setError("")
+
     try {
-      const result = await deletePaste(paste.id)
-      setDeleteResult(result)
+      const result = await editPaste({
+        id: paste.id,
+        title: editedTitle,
+        content: editedContent,
+        language: editedLanguage,
+        theme: currentTheme,
+      })
 
       if (result.success) {
-        // Redirect to home page after 2 seconds
-        setTimeout(() => {
-          router.push("/")
-        }, 2000)
+        setIsEditing(false)
+        // Refresh the page to show updated content
+        router.refresh()
+      } else {
+        setError(result.message || "Failed to save changes")
       }
-    } catch (error) {
-      setDeleteResult({
-        success: false,
-        message: "An error occurred while deleting the snippet",
-      })
+    } catch (err) {
+      setError("An unexpected error occurred")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true)
+    setError("")
+
+    try {
+      const result = await deletePaste(paste.id)
+
+      if (result.success) {
+        // Redirect to home page
+        router.push("/")
+      } else {
+        setError(result.message || "Failed to delete snippet")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred")
     } finally {
       setIsDeleting(false)
     }
@@ -100,23 +147,23 @@ export function ViewPaste({ paste }: ViewPasteProps) {
       case "vs-dark":
         return vscDarkPlus
       case "github":
-        return github
+        return prism // Using prism as a replacement for github
       case "dracula":
-        return dracula
+        return duotoneDark
       case "monokai":
-        return monokai
+        return okaidia
       case "solarized-light":
         return solarizedlight
       case "solarized-dark":
-        return solarizedDark
+        return duotoneDark
       case "nord":
-        return nord
+        return tomorrow
       case "one-light":
-        return oneLight
+        return duotoneLight
       case "one-dark":
-        return oneDark
+        return twilight
       default:
-        return vs // Light theme (default)
+        return prism // Light theme (default)
     }
   }
 
@@ -126,147 +173,212 @@ export function ViewPaste({ paste }: ViewPasteProps) {
     return theme ? theme.label : "Light (VS)"
   }
 
-  // If we have a delete result, show it
-  if (deleteResult) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          {deleteResult.success ? (
-            <Check className="h-8 w-8 text-emerald-600" />
-          ) : (
-            <Trash2 className="h-8 w-8 text-red-600" />
-          )}
-        </div>
-        <h3 className="mb-2 text-xl font-medium">{deleteResult.success ? "Snippet Deleted" : "Delete Failed"}</h3>
-        <p className="text-gray-500 mb-6">{deleteResult.message}</p>
-        {deleteResult.success && <p className="text-sm text-gray-500">Redirecting to home page...</p>}
-        {!deleteResult.success && (
-          <Button
-            onClick={() => setDeleteResult(null)}
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-          >
-            Back to Snippet
-          </Button>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20">
-      <div className="border-b border-gray-100 bg-gray-50 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">{paste.title || "Untitled Snippet"}</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Created {formatDistanceToNow(createdDate, { addSuffix: true })}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">{paste.language}</Badge>
-            {paste.viewLimit !== "unlimited" && (
-              <Badge className="flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
-                <Eye className="h-3 w-3" />
-                {paste.viewCount} / {paste.viewLimit}
-              </Badge>
-            )}
-            {expiresDate && (
-              <Badge className="flex items-center gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200">
-                <Clock className="h-3 w-3" />
-                {formatDistanceToNow(expiresDate, { addSuffix: true })}
-              </Badge>
-            )}
+    <>
+      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg shadow-emerald-100/20">
+        <div className="border-b border-gray-100 bg-gray-50 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              {isEditing ? (
+                <Input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  placeholder="Untitled Snippet"
+                  className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                />
+              ) : (
+                <>
+                  <h1 className="text-xl font-semibold text-gray-900">{paste.title || "Untitled Snippet"}</h1>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Created {formatDistanceToNow(createdDate, { addSuffix: true })}
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isEditing ? (
+                <Select value={editedLanguage} onValueChange={setEditedLanguage}>
+                  <SelectTrigger className="w-[180px] border-gray-200 bg-white">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <>
+                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">{paste.language}</Badge>
+                  {paste.viewLimit !== "unlimited" && (
+                    <Badge className="flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
+                      <Eye className="h-3 w-3" />
+                      {paste.viewCount} / {paste.viewLimit}
+                    </Badge>
+                  )}
+                  {expiresDate && (
+                    <Badge className="flex items-center gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(expiresDate, { addSuffix: true })}
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-end gap-2 p-2 bg-gray-50 border-b border-gray-100">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        <div>
+          <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center">
+              {!isEditing ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
+                    onClick={handleEdit}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-1 text-gray-700 hover:text-red-700"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete this snippet. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleConfirmDelete}
+                          className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                        >
+                          {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-emerald-700"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <span className="animate-spin">⟳</span>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        <span>Save</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-gray-700"
+                    onClick={() => setIsEditing(false)}
+                    disabled={isSaving}
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Cancel</span>
+                  </Button>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
+                  >
+                    <Palette className="h-4 w-4" />
+                    <span>{getCurrentThemeLabel()}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {THEME_OPTIONS.map((theme) => (
+                    <DropdownMenuItem
+                      key={theme.value}
+                      onClick={() => setCurrentTheme(theme.value)}
+                      className={currentTheme === theme.value ? "bg-gray-100" : ""}
+                    >
+                      {theme.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant="ghost"
                 size="sm"
                 className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
+                onClick={copyToClipboard}
               >
-                <Palette className="h-4 w-4" />
-                <span>{getCurrentThemeLabel()}</span>
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied!" : "Copy"}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {THEME_OPTIONS.map((theme) => (
-                <DropdownMenuItem
-                  key={theme.value}
-                  onClick={() => setCurrentTheme(theme.value)}
-                  className={currentTheme === theme.value ? "bg-gray-100" : ""}
-                >
-                  {theme.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
-            onClick={copyToClipboard}
-          >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copied!" : "Copy"}
-          </Button>
+          {error && (
+            <div className="p-2 bg-red-50 text-red-700 text-sm flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {error}
+            </div>
+          )}
 
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1 text-gray-700 hover:text-red-600">
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this snippet. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleDelete()
-                  }}
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-        <div className="max-h-[600px] overflow-auto">
-          <SyntaxHighlighter
-            language={paste.language === "plaintext" ? "text" : paste.language}
-            style={getThemeStyle()}
-            showLineNumbers
-            customStyle={{
-              margin: 0,
-              borderRadius: 0,
-              fontSize: "0.9rem",
-            }}
-          >
-            {paste.content}
-          </SyntaxHighlighter>
+          <div className="max-h-[600px] overflow-auto">
+            {isEditing ? (
+              <CodeEditor
+                value={editedContent}
+                onChange={setEditedContent}
+                language={editedLanguage}
+                theme={currentTheme}
+              />
+            ) : (
+              <SyntaxHighlighter
+                language={paste.language === "plaintext" ? "text" : paste.language}
+                style={getThemeStyle()}
+                showLineNumbers
+                customStyle={{
+                  margin: 0,
+                  borderRadius: 0,
+                  fontSize: "0.9rem",
+                }}
+              >
+                {paste.content}
+              </SyntaxHighlighter>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <PremiumFeatureModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
+    </>
   )
 }

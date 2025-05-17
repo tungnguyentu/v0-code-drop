@@ -195,27 +195,3 @@ export async function cleanupExpiredPastes() {
 
   revalidatePath("/")
 }
-
-// New function to delete a paste
-export async function deletePaste(shortId: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const supabase = createServerClient()
-
-    // Delete the paste
-    const { error } = await supabase.from("pastes").delete().eq("short_id", shortId)
-
-    if (error) {
-      console.error("Error deleting paste:", error)
-      return { success: false, message: "Failed to delete snippet" }
-    }
-
-    // Invalidate caches
-    invalidateCacheByPrefix("admin")
-    invalidateCacheByPrefix("snippets")
-
-    return { success: true, message: "Snippet deleted successfully" }
-  } catch (error) {
-    console.error("Error in deletePaste:", error)
-    return { success: false, message: "An unexpected error occurred" }
-  }
-}
