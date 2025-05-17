@@ -1,13 +1,25 @@
 import crypto from "crypto"
 
-// The encryption key should be stored in environment variables in production
-// For this example, we'll use a fixed key, but in a real application, use process.env.ENCRYPTION_KEY
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "your-secure-encryption-key-must-be-32-chars"
+// The encryption key should be stored in environment variables
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
 const ENCRYPTION_ALGORITHM = "aes-256-gcm"
 
-// Ensure the key is the correct length for AES-256
-if (Buffer.from(ENCRYPTION_KEY).length !== 32) {
-  console.warn("Warning: Encryption key is not 32 bytes long. This may cause issues with encryption/decryption.")
+/**
+ * Ensures the encryption key is valid and properly formatted
+ * @returns Buffer containing the encryption key
+ */
+function getEncryptionKey(): Buffer {
+  if (!ENCRYPTION_KEY) {
+    throw new Error("ENCRYPTION_KEY environment variable is not set")
+  }
+
+  // If the key is already 32 bytes, use it directly
+  if (Buffer.from(ENCRYPTION_KEY).length === 32) {
+    return Buffer.from(ENCRYPTION_KEY)
+  }
+
+  // Otherwise, derive a 32-byte key using SHA-256
+  return crypto.createHash("sha256").update(ENCRYPTION_KEY).digest()
 }
 
 /**
@@ -20,23 +32,31 @@ export function encryptText(text: string): {
   iv: string
   authTag: string
 } {
-  // Generate a random initialization vector
-  const iv = crypto.randomBytes(16)
+  try {
+    // Get the properly formatted encryption key
+    const key = getEncryptionKey()
 
-  // Create cipher
-  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv)
+    // Generate a random initialization vector
+    const iv = crypto.randomBytes(16)
 
-  // Encrypt the text
-  let encrypted = cipher.update(text, "utf8", "hex")
-  encrypted += cipher.final("hex")
+    // Create cipher
+    const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv)
 
-  // Get the authentication tag
-  const authTag = cipher.getAuthTag().toString("hex")
+    // Encrypt the text
+    let encrypted = cipher.update(text, "utf8", "hex")
+    encrypted += cipher.final("hex")
 
-  return {
-    encryptedText: encrypted,
-    iv: iv.toString("hex"),
-    authTag,
+    // Get the authentication tag
+    const authTag = cipher.getAuthTag().toString("hex")
+
+    return {
+      encryptedText: encrypted,
+      iv: iv.toString("hex"),
+      authTag,
+    }
+  } catch (error) {
+    console.error("Encryption error:", error)
+    throw new Error("Failed to encrypt content")
   }
 }
 
@@ -49,8 +69,11 @@ export function encryptText(text: string): {
  */
 export function decryptText(encryptedText: string, iv: string, authTag: string): string {
   try {
+    // Get the properly formatted encryption key
+    const key = getEncryptionKey()
+
     // Create decipher
-    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, Buffer.from(ENCRYPTION_KEY), Buffer.from(iv, "hex"))
+    const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, Buffer.from(iv, "hex"))
 
     // Set auth tag
     decipher.setAuthTag(Buffer.from(authTag, "hex"))

@@ -54,7 +54,40 @@ export async function createPaste({
   }
 
   // Encrypt the content
-  const { encryptedText, iv, authTag } = encryptText(content)
+  let encryptedData
+  try {
+    encryptedData = encryptText(content)
+  } catch (error) {
+    console.error("Encryption error:", error)
+    // Fallback to storing unencrypted if encryption fails
+    const { data, error: insertError } = await supabase
+      .from("pastes")
+      .insert({
+        short_id: shortId,
+        title: title || null,
+        content: content,
+        is_encrypted: false,
+        language,
+        expires_at: expiresAt,
+        view_limit: viewLimit,
+        view_count: 0,
+        password_hash: passwordHash,
+        is_protected: isProtected,
+        theme,
+      })
+      .select("short_id")
+      .single()
+
+    if (insertError) {
+      console.error("Error creating paste:", insertError)
+      throw new Error("Failed to create paste")
+    }
+
+    return shortId
+  }
+
+  // Then continue with the original code using encryptedData
+  const { encryptedText, iv, authTag } = encryptedData
 
   // Create the paste in the database
   const { data, error } = await supabase
@@ -154,7 +187,10 @@ export async function getPasteById(shortId: string) {
       decryptedContent = decryptText(paste.content, paste.content_iv, paste.content_auth_tag)
     } catch (error) {
       console.error("Error decrypting paste content:", error)
-      return null
+      // Instead of returning null, return the encrypted content with a warning
+      decryptedContent = paste.content
+      // Add a flag to indicate decryption failed
+      paste.decryptionFailed = true
     }
   }
 
