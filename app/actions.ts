@@ -6,7 +6,6 @@ import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
-import { encryptText, decryptText } from "@/lib/encryption"
 
 interface CreatePasteParams {
   title: string
@@ -53,52 +52,13 @@ export async function createPaste({
     isProtected = true
   }
 
-  // Encrypt the content
-  let encryptedData
-  try {
-    encryptedData = encryptText(content)
-  } catch (error) {
-    console.error("Encryption error:", error)
-    // Fallback to storing unencrypted if encryption fails
-    const { data, error: insertError } = await supabase
-      .from("pastes")
-      .insert({
-        short_id: shortId,
-        title: title || null,
-        content: content,
-        is_encrypted: false,
-        language,
-        expires_at: expiresAt,
-        view_limit: viewLimit,
-        view_count: 0,
-        password_hash: passwordHash,
-        is_protected: isProtected,
-        theme,
-      })
-      .select("short_id")
-      .single()
-
-    if (insertError) {
-      console.error("Error creating paste:", insertError)
-      throw new Error("Failed to create paste")
-    }
-
-    return shortId
-  }
-
-  // Then continue with the original code using encryptedData
-  const { encryptedText, iv, authTag } = encryptedData
-
   // Create the paste in the database
   const { data, error } = await supabase
     .from("pastes")
     .insert({
       short_id: shortId,
       title: title || null,
-      content: encryptedText,
-      content_iv: iv,
-      content_auth_tag: authTag,
-      is_encrypted: true,
+      content,
       language,
       expires_at: expiresAt,
       view_limit: viewLimit,
@@ -180,25 +140,11 @@ export async function getPasteById(shortId: string) {
     paste.view_count = newViewCount
   }
 
-  // Decrypt content if it's encrypted
-  let decryptedContent = paste.content
-  if (paste.is_encrypted && paste.content_iv && paste.content_auth_tag) {
-    try {
-      decryptedContent = decryptText(paste.content, paste.content_iv, paste.content_auth_tag)
-    } catch (error) {
-      console.error("Error decrypting paste content:", error)
-      // Instead of returning null, return the encrypted content with a warning
-      decryptedContent = paste.content
-      // Add a flag to indicate decryption failed
-      paste.decryptionFailed = true
-    }
-  }
-
   // Format the paste for frontend use
   return {
     id: paste.short_id,
     title: paste.title || "",
-    content: decryptedContent,
+    content: paste.content,
     language: paste.language,
     createdAt: paste.created_at,
     expiresAt: paste.expires_at,

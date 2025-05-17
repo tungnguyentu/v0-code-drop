@@ -47,7 +47,6 @@ interface Paste {
   viewLimit: string
   viewCount: number
   theme: string
-  decryptionFailed?: boolean
 }
 
 interface ViewPasteProps {
@@ -354,12 +353,6 @@ export function ViewPaste({ paste }: ViewPasteProps) {
           )}
 
           <div className="max-h-[600px] overflow-auto">
-            {paste.decryptionFailed && (
-              <div className="p-2 bg-amber-50 text-amber-700 text-sm flex items-center">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Warning: Unable to decrypt this content. You may be seeing encrypted data.
-              </div>
-            )}
             {isEditing ? (
               <CodeEditor
                 value={editedContent}

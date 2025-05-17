@@ -9,9 +9,6 @@ export interface Database {
           short_id: string
           title: string | null
           content: string
-          content_iv: string | null
-          content_auth_tag: string | null
-          is_encrypted: boolean
           language: string
           created_at: string
           expires_at: string | null
@@ -26,9 +23,6 @@ export interface Database {
           short_id: string
           title?: string | null
           content: string
-          content_iv?: string | null
-          content_auth_tag?: string | null
-          is_encrypted?: boolean
           language: string
           created_at?: string
           expires_at?: string | null
@@ -43,9 +37,6 @@ export interface Database {
           short_id?: string
           title?: string | null
           content?: string
-          content_iv?: string | null
-          content_auth_tag?: string | null
-          is_encrypted?: boolean
           language?: string
           created_at?: string
           expires_at?: string | null
