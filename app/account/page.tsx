@@ -1,18 +1,40 @@
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/app/actions/auth"
+"use client"
+
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { CreditCard, User, Shield } from "lucide-react"
+import { CreditCard, User, Shield, Loader2 } from "lucide-react"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
-export default async function AccountPage() {
-  const user = await getCurrentUser()
+export default function AccountPage() {
+  const router = useRouter()
+  const { user, isLoading, isAuthenticated } = useCurrentUser()
 
-  if (!user) {
-    redirect("/auth/login")
+  // Redirect if not authenticated after loading completes
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/auth/login")
+    }
+  }, [isLoading, isAuthenticated, router])
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-500" />
+          <p className="text-gray-600">Loading your account...</p>
+        </div>
+      </div>
+    )
   }
+
+  // If not authenticated and not loading, the useEffect will handle redirect
+  if (!user) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-emerald-50">

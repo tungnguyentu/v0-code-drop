@@ -11,7 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, Settings, CreditCard, Code } from "lucide-react"
+import { User, LogOut, Settings, CreditCard, Code, Loader2 } from "lucide-react"
+import { useState } from "react"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 interface UserAccountNavProps {
   user: {
@@ -22,13 +24,22 @@ interface UserAccountNavProps {
 
 export function UserAccountNav({ user }: UserAccountNavProps) {
   const router = useRouter()
+  const { refreshSession } = useCurrentUser()
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const handleSignOut = async () => {
-    const result = await signOut()
-    if (result.success) {
-      // Handle the redirection on the client side
-      router.push("/")
-      router.refresh()
+    try {
+      setIsSigningOut(true)
+      const result = await signOut()
+      if (result.success) {
+        await refreshSession() // Update the auth context
+        router.push("/")
+        router.refresh()
+      }
+    } catch (error) {
+      console.error("Error signing out:", error)
+    } finally {
+      setIsSigningOut(false)
     }
   }
 
@@ -73,9 +84,25 @@ export function UserAccountNav({ user }: UserAccountNavProps) {
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600" onSelect={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+        <DropdownMenuItem
+          className="cursor-pointer text-red-600 focus:text-red-600"
+          onSelect={(e) => {
+            e.preventDefault()
+            handleSignOut()
+          }}
+          disabled={isSigningOut}
+        >
+          {isSigningOut ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span>Signing out...</span>
+            </>
+          ) : (
+            <>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

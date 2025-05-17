@@ -1,18 +1,25 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
-import { Sparkles, LogIn } from "lucide-react"
+import { Sparkles, LogIn, Loader2 } from "lucide-react"
 import { UserAccountNav } from "@/components/user/user-account-nav"
-import { getCurrentUser } from "@/app/actions/auth"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
-export async function Header() {
-  const user = await getCurrentUser()
+export function Header() {
+  const { user, isLoading } = useCurrentUser()
 
   return (
     <header className="mb-8 flex items-center justify-between">
       <Logo />
       <div className="flex items-center gap-4">
-        {user ? (
+        {isLoading ? (
+          <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50" disabled>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <span>Loading...</span>
+          </Button>
+        ) : user ? (
           <UserAccountNav user={user} />
         ) : (
           <>
