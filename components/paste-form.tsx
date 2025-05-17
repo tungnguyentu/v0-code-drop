@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Eye, EyeOff, Loader2, Lock, Trash2 } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, Loader2, Lock, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { createPaste } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { detectLanguage } from "@/lib/language-detection"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function PasteForm() {
   const router = useRouter()
@@ -26,21 +27,46 @@ export function PasteForm() {
   const [theme, setTheme] = useState("vs")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pasteUrl, setPasteUrl] = useState("")
-  const [deletionKey, setDeletionKey] = useState("")
   const [copied, setCopied] = useState(false)
-  const [keysCopied, setKeysCopied] = useState(false)
+
+  // Language detection state
+  const [detectionResult, setDetectionResult] = useState<{
+    language: string
+    confidence: number
+    confidenceLevel: "high" | "medium" | "low" | "minimum"
+    secondaryLanguage: string | null
+  } | null>(null)
 
   // Password protection
   const [isPasswordProtected, setIsPasswordProtected] = useState(false)
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
+  // Auto-detect language when content changes
+  useEffect(() => {
+    if (content.trim().length > 20) {
+      const result = detectLanguage(content)
+      setDetectionResult(result)
+
+      // Only auto-set the language if we have high or medium confidence
+      // or if the current language is plaintext (default)
+      if (
+        (result.confidenceLevel === "high" || result.confidenceLevel === "medium" || language === "plaintext") &&
+        result.language !== "plaintext"
+      ) {
+        setLanguage(result.language)
+      }
+    } else {
+      setDetectionResult(null)
+    }
+  }, [content, language])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      const result = await createPaste({
+      const pasteId = await createPaste({
         title,
         content,
         language,
@@ -51,9 +77,8 @@ export function PasteForm() {
       })
 
       // Generate a shareable URL
-      const url = `${window.location.origin}/${result.shortId}`
+      const url = `${window.location.origin}/${pasteId}`
       setPasteUrl(url)
-      setDeletionKey(result.deletionKey)
     } catch (error) {
       console.error("Error creating paste:", error)
     } finally {
@@ -71,17 +96,6 @@ export function PasteForm() {
     }
   }
 
-  const copyDeletionInfo = async () => {
-    try {
-      const textToCopy = `Snippet URL: ${pasteUrl}\nDeletion Key: ${deletionKey}`
-      await navigator.clipboard.writeText(textToCopy)
-      setKeysCopied(true)
-      setTimeout(() => setKeysCopied(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy deletion info:", err)
-    }
-  }
-
   const createNewPaste = () => {
     setTitle("")
     setContent("")
@@ -92,7 +106,56 @@ export function PasteForm() {
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
-    setDeletionKey("")
+    setDetectionResult(null)
+  }
+
+  // Handle content paste event for language detection
+  const handleContentPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>, pastedText: string) => {
+    if (pastedText && pastedText.length > 20) {
+      const result = detectLanguage(pastedText)
+      setDetectionResult(result)
+
+      // Only auto-set the language if we have high or medium confidence
+      // or if the current language is plaintext (default)
+      if (
+        (result.confidenceLevel === "high" || result.confidenceLevel === "medium" || language === "plaintext") &&
+        result.language !== "plaintext"
+      ) {
+        setLanguage(result.language)
+      }
+    }
+  }
+
+  // Get confidence indicator color
+  const getConfidenceColor = (level: "high" | "medium" | "low" | "minimum") => {
+    switch (level) {
+      case "high":
+        return "text-emerald-500"
+      case "medium":
+        return "text-blue-500"
+      case "low":
+        return "text-amber-500"
+      case "minimum":
+        return "text-red-500"
+      default:
+        return "text-gray-500"
+    }
+  }
+
+  // Get confidence icon
+  const getConfidenceIcon = (level: "high" | "medium" | "low" | "minimum") => {
+    switch (level) {
+      case "high":
+        return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+      case "medium":
+        return <CheckCircle2 className="h-4 w-4 text-blue-500" />
+      case "low":
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />
+      case "minimum":
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
+      default:
+        return null
+    }
   }
 
   return (
@@ -123,35 +186,6 @@ export function PasteForm() {
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
-
-          <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
-            <AlertDescription className="flex flex-col gap-2">
-              <div className="flex items-start gap-2">
-                <Trash2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Save this deletion key to remove your snippet later</p>
-                  <p className="text-sm mt-1">You won't be able to see this key again after you leave this page.</p>
-                </div>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  value={deletionKey}
-                  readOnly
-                  className="font-mono text-sm border-amber-200 bg-amber-50/50"
-                  onClick={(e) => e.currentTarget.select()}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copyDeletionInfo}
-                  className="flex-shrink-0 border-amber-200 bg-amber-50/50 hover:bg-amber-100 text-amber-800"
-                >
-                  {keysCopied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                  {keysCopied ? "Copied!" : "Copy"}
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
 
           {isPasswordProtected && (
             <div className="mb-6 rounded-md bg-amber-50 p-4 text-amber-700 flex items-center">
@@ -192,8 +226,51 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <CodeEditor value={content} onChange={setContent} language={language} theme={theme} />
+              <CodeEditor
+                value={content}
+                onChange={setContent}
+                language={language}
+                theme={theme}
+                onPaste={handleContentPaste}
+              />
             </div>
+            {detectionResult && content.length > 20 && (
+              <div className="mt-2 flex items-center text-xs">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1">
+                        {getConfidenceIcon(detectionResult.confidenceLevel)}
+                        <span className={getConfidenceColor(detectionResult.confidenceLevel)}>
+                          Language detected:{" "}
+                          {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.language)?.label ||
+                            detectionResult.language}
+                          {detectionResult.secondaryLanguage && detectionResult.confidenceLevel !== "high" && (
+                            <span>
+                              {" "}
+                              (may contain{" "}
+                              {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.secondaryLanguage)?.label ||
+                                detectionResult.secondaryLanguage}
+                              )
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Confidence: {Math.round(detectionResult.confidence * 100)}%</p>
+                      {detectionResult.secondaryLanguage && (
+                        <p>
+                          Alternative:{" "}
+                          {LANGUAGE_OPTIONS.find((l) => l.value === detectionResult.secondaryLanguage)?.label ||
+                            detectionResult.secondaryLanguage}
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
