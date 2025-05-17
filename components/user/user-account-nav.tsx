@@ -24,8 +24,12 @@ export function UserAccountNav({ user }: UserAccountNavProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
-    await signOut()
-    router.refresh()
+    const result = await signOut()
+    if (result.success) {
+      // Handle the redirection on the client side
+      router.push("/")
+      router.refresh()
+    }
   }
 
   return (

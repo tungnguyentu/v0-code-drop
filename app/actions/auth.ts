@@ -1,5 +1,4 @@
 "use server"
-import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 
 export async function signUp(email: string, password: string) {
@@ -38,7 +37,8 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   const supabase = createServerClient()
   await supabase.auth.signOut()
-  redirect("/")
+  // Remove the redirect call and return success instead
+  return { success: true }
 }
 
 export async function resetPassword(email: string) {
