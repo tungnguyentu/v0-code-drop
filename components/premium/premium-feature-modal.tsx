@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button"
 interface PremiumFeatureModalProps {
   isOpen: boolean
   onClose: () => void
+  isAuthenticated: boolean
 }
 
-export function PremiumFeatureModal({ isOpen, onClose }: PremiumFeatureModalProps) {
+export function PremiumFeatureModal({ isOpen, onClose, isAuthenticated }: PremiumFeatureModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -52,12 +53,26 @@ export function PremiumFeatureModal({ isOpen, onClose }: PremiumFeatureModalProp
           </ul>
         </div>
         <DialogFooter className="flex flex-col sm:flex-row sm:justify-center sm:space-x-2">
-          <Button
-            asChild
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-          >
-            <Link href="/pricing">View Pricing</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              asChild
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+            >
+              <Link href="/pricing">View Pricing</Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+              >
+                <Link href="/auth/login">Login</Link>
+              </Button>
+              <Button asChild variant="outline" className="mt-2 sm:mt-0">
+                <Link href="/auth/signup">Sign Up</Link>
+              </Button>
+            </>
+          )}
           <Button variant="outline" onClick={onClose} className="mt-2 sm:mt-0">
             Maybe Later
           </Button>

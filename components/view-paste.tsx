@@ -47,13 +47,15 @@ interface Paste {
   viewLimit: string
   viewCount: number
   theme: string
+  userId?: string
 }
 
 interface ViewPasteProps {
   paste: Paste
+  user: any | null
 }
 
-export function ViewPaste({ paste }: ViewPasteProps) {
+export function ViewPaste({ paste, user }: ViewPasteProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(paste.theme || "vs")
@@ -66,6 +68,10 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   const [editedLanguage, setEditedLanguage] = useState(paste.language)
   const [error, setError] = useState("")
 
+  const isAuthenticated = !!user
+  const isPremium = user?.isPremium || false
+  const isOwner = user?.id === paste.userId
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(paste.content)
@@ -77,18 +83,32 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   }
 
   const handleEdit = () => {
-    // In a real app, check if user is premium
-    // For demo, we'll show the premium modal
-    setShowPremiumModal(true)
-    // If they were premium, we'd do:
-    // setIsEditing(true)
+    if (!isAuthenticated) {
+      setShowPremiumModal(true)
+      return
+    }
+
+    if (!isPremium) {
+      setShowPremiumModal(true)
+      return
+    }
+
+    setIsEditing(true)
   }
 
   const handleDelete = () => {
-    // Remove the premium check and modal
-    // setShowPremiumModal(true);
-    // Instead, we'll just proceed with the delete confirmation
-    // The AlertDialog is already in the component, so we don't need to add anything else
+    if (!isAuthenticated) {
+      setShowPremiumModal(true)
+      return
+    }
+
+    // All users can delete their own snippets
+    if (!isOwner) {
+      setError("You can only delete snippets that you own")
+      return
+    }
+
+    // Continue with delete confirmation via AlertDialog
   }
 
   const handleSave = async () => {
@@ -378,7 +398,11 @@ export function ViewPaste({ paste }: ViewPasteProps) {
         </div>
       </div>
 
-      <PremiumFeatureModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
+      <PremiumFeatureModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        isAuthenticated={isAuthenticated}
+      />
     </>
   )
 }

@@ -1,8 +1,8 @@
 "use server"
 
 import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
+import { getCurrentUser } from "./auth"
 
 interface EditPasteParams {
   id: string
@@ -20,13 +20,34 @@ export async function editPaste({
   theme,
 }: EditPasteParams): Promise<{ success: boolean; message?: string }> {
   try {
-    // In a real app, check if the user is premium and owns this paste
-    const isPremium = await checkIsPremiumUser()
-    if (!isPremium) {
+    // Check if user is authenticated and premium
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return { success: false, message: "Authentication required" }
+    }
+
+    if (!user.isPremium) {
       return { success: false, message: "Premium subscription required" }
     }
 
     const supabase = createServerClient()
+
+    // Check if the user owns this paste
+    const { data: paste, error: fetchError } = await supabase
+      .from("pastes")
+      .select("user_id")
+      .eq("short_id", id)
+      .single()
+
+    if (fetchError) {
+      return { success: false, message: "Snippet not found" }
+    }
+
+    // If the paste has a user_id, verify ownership
+    if (paste.user_id && paste.user_id !== user.id) {
+      return { success: false, message: "You don't have permission to edit this snippet" }
+    }
 
     // Update the paste
     const { error } = await supabase
@@ -55,16 +76,32 @@ export async function editPaste({
   }
 }
 
-// Update the deletePaste function to allow all users to delete snippets
 export async function deletePaste(id: string): Promise<{ success: boolean; message?: string }> {
   try {
-    // Remove the premium check for deletion
-    // const isPremium = await checkIsPremiumUser();
-    // if (!isPremium) {
-    //   return { success: false, message: "Premium subscription required" };
-    // }
+    // Check if user is authenticated
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return { success: false, message: "Authentication required" }
+    }
 
     const supabase = createServerClient()
+
+    // Check if the user owns this paste
+    const { data: paste, error: fetchError } = await supabase
+      .from("pastes")
+      .select("user_id")
+      .eq("short_id", id)
+      .single()
+
+    if (fetchError) {
+      return { success: false, message: "Snippet not found" }
+    }
+
+    // If the paste has a user_id, verify ownership
+    if (paste.user_id && paste.user_id !== user.id) {
+      return { success: false, message: "You don't have permission to delete this snippet" }
+    }
 
     // Delete the paste
     const { error } = await supabase.from("pastes").delete().eq("short_id", id)
@@ -85,22 +122,7 @@ export async function deletePaste(id: string): Promise<{ success: boolean; messa
   }
 }
 
-// Mock function to check if user is premium
-// In a real app, this would check the user's subscription status in the database
-async function checkIsPremiumUser(): Promise<boolean> {
-  // For demo purposes, we'll use a cookie to simulate premium status
-  const cookieStore = cookies()
-  const premiumStatus = cookieStore.get("premium_status")?.value
-
-  return premiumStatus === "active"
-}
-
-// Function to set premium status (for demo purposes)
-export async function setPremiumStatus(status: "active" | "inactive"): Promise<void> {
-  cookies().set("premium_status", status, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    path: "/",
-  })
+export async function checkIsPremiumUser(): Promise<boolean> {
+  const user = await getCurrentUser()
+  return !!user?.isPremium
 }
