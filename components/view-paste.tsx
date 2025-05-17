@@ -36,7 +36,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { PremiumFeatureModal } from "@/components/premium/premium-feature-modal"
-import { FormatCodeButton } from "@/components/format-code-button"
 
 interface Paste {
   id: string
@@ -86,9 +85,10 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   }
 
   const handleDelete = () => {
-    // In a real app, check if user is premium
-    // For demo, we'll show the premium modal
-    setShowPremiumModal(true)
+    // Remove the premium check and modal
+    // setShowPremiumModal(true);
+    // Instead, we'll just proceed with the delete confirmation
+    // The AlertDialog is already in the component, so we don't need to add anything else
   }
 
   const handleSave = async () => {
@@ -273,20 +273,6 @@ export function ViewPaste({ paste }: ViewPasteProps) {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <FormatCodeButton
-                    code={paste.content}
-                    language={paste.language}
-                    onFormatted={(formattedCode) => {
-                      // Since we can't directly update the paste content without editing,
-                      // we'll show a premium feature modal
-                      setShowPremiumModal(true)
-
-                      // In a real premium app, we would:
-                      // setIsEditing(true)
-                      // setEditedContent(formattedCode)
-                      // handleSave()
-                    }}
-                  />
                 </>
               ) : (
                 <>
@@ -319,7 +305,6 @@ export function ViewPaste({ paste }: ViewPasteProps) {
                     <X className="h-4 w-4" />
                     <span>Cancel</span>
                   </Button>
-                  <FormatCodeButton code={editedContent} language={editedLanguage} onFormatted={setEditedContent} />
                 </>
               )}
             </div>

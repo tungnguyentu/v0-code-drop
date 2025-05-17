@@ -16,7 +16,6 @@ import { Switch } from "@/components/ui/switch"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
 import { detectLanguage } from "@/lib/language-detection"
 import { toast } from "@/components/ui/use-toast"
-import { FormatCodeButton } from "@/components/format-code-button"
 
 export function PasteForm() {
   const router = useRouter()
@@ -188,11 +187,6 @@ export function PasteForm() {
               Content
             </Label>
             <div className="mt-1.5 overflow-hidden rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-100">
-                <div className="flex items-center">
-                  <FormatCodeButton code={content} language={language} onFormatted={setContent} />
-                </div>
-              </div>
               <CodeEditor value={content} onChange={handleContentChange} language={language} theme={theme} />
             </div>
           </div>

@@ -55,13 +55,14 @@ export async function editPaste({
   }
 }
 
+// Update the deletePaste function to allow all users to delete snippets
 export async function deletePaste(id: string): Promise<{ success: boolean; message?: string }> {
   try {
-    // In a real app, check if the user is premium and owns this paste
-    const isPremium = await checkIsPremiumUser()
-    if (!isPremium) {
-      return { success: false, message: "Premium subscription required" }
-    }
+    // Remove the premium check for deletion
+    // const isPremium = await checkIsPremiumUser();
+    // if (!isPremium) {
+    //   return { success: false, message: "Premium subscription required" };
+    // }
 
     const supabase = createServerClient()
 
