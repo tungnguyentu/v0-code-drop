@@ -34,6 +34,7 @@ export default function PricingPage() {
                 description="Essential features for personal use"
                 features={[
                   "Unlimited public snippets",
+                  "Delete snippets",
                   "Syntax highlighting",
                   "Password protection",
                   "Expiration settings",
@@ -51,10 +52,9 @@ export default function PricingPage() {
                 description="Everything in Free, plus premium features"
                 features={[
                   "Edit snippets after creation",
-                  "Delete snippets",
                   "Private snippets",
-                  "Remove branding",
-                  "Priority support",
+                  "Auto Detect Language",
+                  "Priority support"
                 ]}
                 buttonText="Subscribe Now"
                 buttonHref="/subscribe/pro"
