@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Sparkles } from "lucide-react"
 
 interface PastePageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function PastePage({ params }: PastePageProps) {
-  const { id } = params
+  const { id } = await params
 
   // Skip fetching for known routes that aren't pastes
   if (id === "admin") {
@@ -43,10 +43,10 @@ export default async function PastePage({ params }: PastePageProps) {
 
         <main>
           <section className="mx-auto max-w-4xl">
-            {paste.isProtected && !paste.content ? (
+            {paste.isProtected && !('content' in paste) ? (
               <PasswordVerification pasteId={id} title={paste.title} />
             ) : (
-              <ViewPaste paste={paste} />
+              <ViewPaste paste={paste as any} />
             )}
           </section>
         </main>

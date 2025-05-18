@@ -6,16 +6,16 @@ import { Footer } from "@/components/footer"
 import { SubscriptionForm } from "@/components/subscription/subscription-form"
 
 interface SubscribePageProps {
-  params: {
+  params: Promise<{
     plan: string
-  }
+  }>
 }
 
-export default function SubscribePage({ params }: SubscribePageProps) {
-  const { plan } = params
+export default async function SubscribePage({ params }: SubscribePageProps) {
+  const { plan } = await params
 
   // Validate plan
-  if (plan !== "pro" && plan !== "team") {
+  if (plan !== "pro") {
     notFound()
   }
 
@@ -30,19 +30,6 @@ export default function SubscribePage({ params }: SubscribePageProps) {
         "Private snippets",
         "Remove branding",
         "Priority support",
-      ],
-    },
-    team: {
-      name: "Team",
-      price: "$12",
-      period: "per month",
-      features: [
-        "Everything in Pro",
-        "Team workspace",
-        "Collaboration tools",
-        "Snippet organization",
-        "Advanced analytics",
-        "API access",
       ],
     },
   }
@@ -65,7 +52,7 @@ export default function SubscribePage({ params }: SubscribePageProps) {
           <section className="mx-auto max-w-3xl">
             <div className="mb-8 text-center">
               <h1 className="mb-2 text-3xl font-bold tracking-tight text-gray-900">Subscribe to {details.name}</h1>
-              <p className="text-gray-600">Unlock premium features and enhance your code sharing experience.</p>
+              <p className="text-gray-600">Upgrade from Basic to unlock premium features and enhance your code sharing experience.</p>
             </div>
 
             <SubscriptionForm plan={plan} planDetails={details} />

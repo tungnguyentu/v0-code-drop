@@ -6,9 +6,9 @@ export function PricingFaq() {
       <h2 className="mb-8 text-center text-3xl font-bold tracking-tight text-gray-900">Frequently Asked Questions</h2>
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="item-1">
-          <AccordionTrigger className="text-left">What's included in the free plan?</AccordionTrigger>
+          <AccordionTrigger className="text-left">What's included in the basic plan?</AccordionTrigger>
           <AccordionContent>
-            The free plan includes unlimited public snippets, syntax highlighting for over 40 programming languages,
+            The basic plan includes unlimited public snippets, syntax highlighting for over 40 programming languages,
             password protection, expiration settings, and view limits. It's perfect for personal use and occasional code
             sharing.
           </AccordionContent>

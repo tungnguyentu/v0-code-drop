@@ -27,11 +27,11 @@ export default function PricingPage() {
               Choose the plan that's right for you and start sharing code with enhanced features.
             </p>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-8 md:grid-cols-2 md:max-w-3xl mx-auto">
               <PricingCard
                 title="Free"
                 price="$0"
-                description="Basic features for personal use"
+                description="Essential features for personal use"
                 features={[
                   "Unlimited public snippets",
                   "Syntax highlighting",
@@ -46,7 +46,7 @@ export default function PricingPage() {
 
               <PricingCard
                 title="Pro"
-                price="$5"
+                price="$4.99"
                 period="per month"
                 description="Everything in Free, plus premium features"
                 features={[
@@ -59,24 +59,6 @@ export default function PricingPage() {
                 buttonText="Subscribe Now"
                 buttonHref="/subscribe/pro"
                 popular={true}
-              />
-
-              <PricingCard
-                title="Team"
-                price="$12"
-                period="per month"
-                description="Advanced features for teams"
-                features={[
-                  "Everything in Pro",
-                  "Team workspace",
-                  "Collaboration tools",
-                  "Snippet organization",
-                  "Advanced analytics",
-                  "API access",
-                ]}
-                buttonText="Contact Sales"
-                buttonHref="/contact"
-                popular={false}
               />
             </div>
           </section>
