@@ -47,7 +47,7 @@ export default function PricingPage() {
 
               <PricingCard
                 title="Pro"
-                price="$4.99"
+                price="$0.99"
                 period="per month"
                 description="Everything in Free, plus premium features"
                 features={[

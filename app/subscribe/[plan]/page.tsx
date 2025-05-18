@@ -22,7 +22,7 @@ export default async function SubscribePage({ params }: SubscribePageProps) {
   const planDetails = {
     pro: {
       name: "Pro",
-      price: "$4.99",
+      price: "$0.99",
       period: "per month",
       features: [
         "Edit snippets after creation",
