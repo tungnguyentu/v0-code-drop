@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Eye, EyeOff, Loader2, Lock } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, Loader2, Lock, AlertTriangle } from "lucide-react"
 import { createPaste } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CodeEditor } from "@/components/code-editor"
 import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LANGUAGE_OPTIONS, EXPIRATION_OPTIONS, VIEW_LIMIT_OPTIONS, THEME_OPTIONS } from "@/lib/constants"
 import { detectLanguage } from "@/lib/language-detection"
 import { toast } from "@/components/ui/use-toast"
@@ -28,6 +30,9 @@ export function PasteForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pasteUrl, setPasteUrl] = useState("")
   const [copied, setCopied] = useState(false)
+
+  // Owner code state
+  const [ownerCode, setOwnerCode] = useState("")
 
   // Password protection
   const [isPasswordProtected, setIsPasswordProtected] = useState(false)
@@ -67,7 +72,7 @@ export function PasteForm() {
     setIsSubmitting(true)
 
     try {
-      const pasteId = await createPaste({
+      const result = await createPaste({
         title,
         content,
         language,
@@ -78,8 +83,9 @@ export function PasteForm() {
       })
 
       // Generate a shareable URL
-      const url = `${window.location.origin}/${pasteId}`
+      const url = `${window.location.origin}/${result.shortId}`
       setPasteUrl(url)
+      setOwnerCode(result.ownerCode)
     } catch (error) {
       console.error("Error creating paste:", error)
       toast({
@@ -107,6 +113,23 @@ export function PasteForm() {
     }
   }
 
+  const copyOwnerCode = async () => {
+    try {
+      await navigator.clipboard.writeText(ownerCode)
+      toast({
+        title: "Copied!",
+        description: "Owner code copied to clipboard",
+      })
+    } catch (err) {
+      console.error("Failed to copy:", err)
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      })
+    }
+  }
+
   const createNewPaste = () => {
     setTitle("")
     setContent("")
@@ -117,46 +140,89 @@ export function PasteForm() {
     setIsPasswordProtected(false)
     setPassword("")
     setPasteUrl("")
+    setOwnerCode("")
   }
 
   return (
     <div>
-      {pasteUrl ? (
-        <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-md">
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <Check className="h-8 w-8 text-emerald-600" />
-            </div>
-            <h3 className="mb-2 text-xl font-medium">Snippet Created!</h3>
-            <p className="text-gray-500">Your code snippet has been created successfully. Share the link below:</p>
-          </div>
-
-          <div className="mb-6 flex items-center gap-2">
-            <Input
-              value={pasteUrl}
-              readOnly
-              className="font-mono text-sm border-gray-200 bg-gray-50"
-              onClick={(e) => e.currentTarget.select()}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={copyToClipboard}
-              className="flex-shrink-0 border-gray-200 hover:bg-gray-100"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          {isPasswordProtected && (
-            <div className="mb-6 rounded-md bg-amber-50 p-4 text-amber-700 flex items-center">
-              <Lock className="h-5 w-5 mr-2 flex-shrink-0" />
-              <div>
-                <p className="font-medium">This snippet is password protected</p>
-                <p className="text-sm">Anyone with the link will need the password to view it</p>
+      {pasteUrl && ownerCode ? (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-md">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                <Check className="h-8 w-8 text-emerald-600" />
               </div>
+              <h3 className="mb-2 text-xl font-medium">Snippet Created!</h3>
+              <p className="text-gray-500">Your code snippet has been created successfully. Share the link below:</p>
             </div>
-          )}
+
+            <div className="mb-6 flex items-center gap-2">
+              <Input
+                value={pasteUrl}
+                readOnly
+                className="font-mono text-sm border-gray-200 bg-gray-50"
+                onClick={(e) => e.currentTarget.select()}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={copyToClipboard}
+                className="flex-shrink-0 border-gray-200 hover:bg-gray-100"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {isPasswordProtected && (
+              <div className="mb-6 rounded-md bg-amber-50 p-4 text-amber-700 flex items-center">
+                <Lock className="h-5 w-5 mr-2 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">This snippet is password protected</p>
+                  <p className="text-sm">Anyone with the link will need the password to view it</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Owner Code Display */}
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                Save Your Owner Code
+              </CardTitle>
+              <CardDescription className="text-amber-700">
+                You'll need this code to edit or delete your snippet. It will not be shown again!
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert className="border-red-200 bg-red-50">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-700">
+                  <strong>Important:</strong> Save this code in a secure location. Without it, you won't be able to edit or delete your snippet.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-700">Owner Code</div>
+                  <div className="font-mono text-lg text-gray-900 mt-1">{ownerCode}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyOwnerCode}
+                  className="ml-3"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="text-xs text-gray-600">
+                <p><strong>Owner Code:</strong> Allows you to edit and delete this snippet</p>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-center">
             <Button
@@ -277,58 +343,53 @@ export function PasteForm() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Lock className="h-4 w-4 text-gray-500" />
-                <Label htmlFor="password-protection" className="text-gray-700 font-medium">
-                  Password Protection
-                </Label>
-              </div>
-              <Switch id="password-protection" checked={isPasswordProtected} onCheckedChange={setIsPasswordProtected} />
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <div className="mb-3 flex items-center space-x-2">
+              <Switch
+                id="password-protection"
+                checked={isPasswordProtected}
+                onCheckedChange={setIsPasswordProtected}
+              />
+              <Label htmlFor="password-protection" className="text-gray-700 cursor-pointer">
+                Password Protection
+              </Label>
             </div>
 
             {isPasswordProtected && (
-              <div className="mt-4">
-                <Label htmlFor="password" className="text-gray-700">
-                  Set Password
-                </Label>
-                <div className="mt-1.5 relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter a secure password"
-                    className="border-gray-200 pr-10 focus:border-emerald-500 focus:ring-emerald-500"
-                    required={isPasswordProtected}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-gray-600"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Anyone with the link will need this password to view the snippet
-                </p>
+              <div className="relative">
+                <Input
+                  placeholder="Enter password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </Button>
               </div>
             )}
           </div>
 
           <Button
             type="submit"
+            disabled={isSubmitting || !content.trim()}
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
-            disabled={!content || isSubmitting || (isPasswordProtected && !password)}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                Creating Snippet...
               </>
             ) : (
               "Create Snippet"

@@ -6,6 +6,8 @@ import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { invalidateCacheByPrefix } from "@/lib/cache"
+import { generateOwnerCode, hashCode, verifyCode, isValidOwnerCodeFormat } from "@/lib/owner-codes"
+import { calculateNewExpiryDate, validateViewLimitChange } from "@/lib/utils"
 
 interface CreatePasteParams {
   title: string
@@ -17,6 +19,11 @@ interface CreatePasteParams {
   theme: string
 }
 
+interface CreatePasteResult {
+  shortId: string
+  ownerCode: string
+}
+
 export async function createPaste({
   title,
   content,
@@ -25,11 +32,15 @@ export async function createPaste({
   viewLimit,
   password,
   theme,
-}: CreatePasteParams): Promise<string> {
+}: CreatePasteParams): Promise<CreatePasteResult> {
   const supabase = createServerClient()
 
   // Generate a short ID for the paste URL
   const shortId = nanoid(8)
+
+  // Generate owner code
+  const ownerCode = generateOwnerCode()
+  const ownerCodeHash = await hashCode(ownerCode)
 
   // Calculate expiration date
   let expiresAt = null
@@ -47,7 +58,6 @@ export async function createPaste({
   let isProtected = false
 
   if (password && password.trim()) {
-    // Hash the password with bcrypt
     passwordHash = await bcrypt.hash(password, 10)
     isProtected = true
   }
@@ -66,6 +76,8 @@ export async function createPaste({
       password_hash: passwordHash,
       is_protected: isProtected,
       theme,
+      owner_code: ownerCodeHash,
+      created_ip: null, // Could be populated from headers if needed
     })
     .select("short_id")
     .single()
@@ -75,11 +87,14 @@ export async function createPaste({
     throw new Error("Failed to create paste")
   }
 
-  // Invalidate all admin-related caches when a new paste is created
+  // Invalidate caches
   invalidateCacheByPrefix("admin")
   invalidateCacheByPrefix("snippets")
 
-  return shortId
+  return {
+    shortId,
+    ownerCode,
+  }
 }
 
 export async function getPasteById(shortId: string) {
@@ -110,7 +125,7 @@ export async function getPasteById(shortId: string) {
   // Check if the paste is password protected
   if (paste.is_protected) {
     // Check if the user has already verified the password for this paste
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const verifiedPastes = cookieStore.get(`verified_paste_${shortId}`)?.value
 
     if (!verifiedPastes) {
@@ -172,7 +187,8 @@ export async function verifyPastePassword(shortId: string, password: string): Pr
 
   if (isValid) {
     // Set a cookie to remember that this paste has been verified
-    cookies().set(`verified_paste_${shortId}`, "true", {
+    const cookieStore = await cookies()
+    cookieStore.set(`verified_paste_${shortId}`, "true", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24, // 24 hours
@@ -183,7 +199,167 @@ export async function verifyPastePassword(shortId: string, password: string): Pr
   return isValid
 }
 
-// Add a helper function to clean up expired pastes
+// Verify owner code
+export async function verifyOwnerCode(snippetId: string, ownerCode: string): Promise<boolean> {
+  if (!isValidOwnerCodeFormat(ownerCode)) {
+    return false
+  }
+
+  const supabase = createServerClient()
+
+  const { data: pastes, error } = await supabase
+    .from("pastes")
+    .select("owner_code")
+    .eq("short_id", snippetId)
+
+  if (error || !pastes || pastes.length === 0) {
+    return false
+  }
+
+  const hashedCode = pastes[0].owner_code
+  return await verifyCode(ownerCode, hashedCode)
+}
+
+// Get snippet for editing (requires owner code)
+export async function getSnippetForEdit(snippetId: string, ownerCode: string) {
+  // First verify the owner code
+  const isValidOwner = await verifyOwnerCode(snippetId, ownerCode)
+  if (!isValidOwner) {
+    return null
+  }
+
+  const supabase = createServerClient()
+
+  const { data: pastes, error } = await supabase
+    .from("pastes")
+    .select("*")
+    .eq("short_id", snippetId)
+
+  if (error || !pastes || pastes.length === 0) {
+    return null
+  }
+
+  const paste = pastes[0]
+
+  return {
+    id: paste.short_id,
+    title: paste.title || "",
+    content: paste.content,
+    language: paste.language,
+    theme: paste.theme || "vs",
+    createdAt: paste.created_at,
+    expiresAt: paste.expires_at,
+    viewLimit: paste.view_limit,
+    viewCount: paste.view_count,
+    isProtected: paste.is_protected,
+  }
+}
+
+// Update existing snippet
+export async function updateSnippet(
+  snippetId: string,
+  ownerCode: string,
+  updatedData: {
+    title?: string
+    content?: string
+    language?: string
+    theme?: string
+    expiryOption?: string
+    viewLimitOption?: string
+  }
+): Promise<{ success: boolean; message?: string }> {
+  // Verify owner code
+  const isValidOwner = await verifyOwnerCode(snippetId, ownerCode)
+  if (!isValidOwner) {
+    return { success: false, message: "Invalid owner code" }
+  }
+
+  const supabase = createServerClient()
+
+  // Get current snippet data for validation
+  const { data: currentPaste, error: fetchError } = await supabase
+    .from("pastes")
+    .select("view_count, view_limit")
+    .eq("short_id", snippetId)
+    .single()
+
+  if (fetchError || !currentPaste) {
+    return { success: false, message: "Snippet not found" }
+  }
+
+  // Validate view limit change if provided
+  if (updatedData.viewLimitOption) {
+    const validation = validateViewLimitChange(currentPaste.view_count, updatedData.viewLimitOption)
+    if (!validation.valid) {
+      return { success: false, message: validation.message }
+    }
+  }
+
+  const updateFields: any = {}
+  if (updatedData.title !== undefined) updateFields.title = updatedData.title || null
+  if (updatedData.content !== undefined) updateFields.content = updatedData.content
+  if (updatedData.language !== undefined) updateFields.language = updatedData.language
+  if (updatedData.theme !== undefined) updateFields.theme = updatedData.theme
+  
+  // Handle expiry option
+  if (updatedData.expiryOption !== undefined) {
+    const newExpiryDate = calculateNewExpiryDate(updatedData.expiryOption)
+    updateFields.expires_at = newExpiryDate ? newExpiryDate.toISOString() : null
+  }
+  
+  // Handle view limit option
+  if (updatedData.viewLimitOption !== undefined) {
+    updateFields.view_limit = updatedData.viewLimitOption
+  }
+
+  const { error } = await supabase
+    .from("pastes")
+    .update(updateFields)
+    .eq("short_id", snippetId)
+
+  if (error) {
+    console.error("Error updating snippet:", error)
+    return { success: false, message: "Failed to update snippet" }
+  }
+
+  // Invalidate caches
+  invalidateCacheByPrefix("snippets")
+  invalidateCacheByPrefix(snippetId)
+
+  return { success: true }
+}
+
+// Delete snippet
+export async function deleteSnippet(
+  snippetId: string,
+  ownerCode: string
+): Promise<{ success: boolean; message?: string }> {
+  // Verify owner code
+  const isValidOwner = await verifyOwnerCode(snippetId, ownerCode)
+  if (!isValidOwner) {
+    return { success: false, message: "Invalid owner code" }
+  }
+
+  const supabase = createServerClient()
+
+  const { error } = await supabase
+    .from("pastes")
+    .delete()
+    .eq("short_id", snippetId)
+
+  if (error) {
+    console.error("Error deleting snippet:", error)
+    return { success: false, message: "Failed to delete snippet" }
+  }
+
+  // Invalidate caches
+  invalidateCacheByPrefix("snippets")
+  invalidateCacheByPrefix(snippetId)
+
+  return { success: true }
+}
+
+// Clean up expired pastes
 export async function cleanupExpiredPastes() {
   const supabase = createServerClient()
 

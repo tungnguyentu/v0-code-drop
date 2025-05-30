@@ -33,12 +33,6 @@ export default async function PastePage({ params }: PastePageProps) {
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
           <Logo />
-          <Button asChild variant="outline" className="border-gray-200 hover:bg-gray-50">
-            <Link href="/pricing" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              <span>Premium</span>
-            </Link>
-          </Button>
         </header>
 
         <main>

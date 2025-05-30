@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Clock, Eye, Palette, Edit, Trash2, Save, X, AlertTriangle } from "lucide-react"
+import { Check, Copy, Clock, Eye, Palette, Edit3, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import {
@@ -18,12 +18,11 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { THEME_OPTIONS, LANGUAGE_OPTIONS } from "@/lib/constants"
-import { editPaste, deletePaste } from "@/app/actions/premium"
-import { CodeEditor } from "@/components/code-editor"
+import { THEME_OPTIONS } from "@/lib/constants"
+import { OwnerCodeModal } from "@/components/owner-code-modal"
+import { deleteSnippet } from "@/app/actions"
+import { toast } from "@/components/ui/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,9 +32,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { PremiumFeatureModal } from "@/components/premium/premium-feature-modal"
 
 interface Paste {
   id: string
@@ -57,14 +54,10 @@ export function ViewPaste({ paste }: ViewPasteProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(paste.theme || "vs")
-  const [isEditing, setIsEditing] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [showPremiumModal, setShowPremiumModal] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(paste.title)
-  const [editedContent, setEditedContent] = useState(paste.content)
-  const [editedLanguage, setEditedLanguage] = useState(paste.language)
-  const [error, setError] = useState("")
+  const [showOwnerModal, setShowOwnerModal] = useState(false)
+  const [modalAction, setModalAction] = useState<"edit" | "delete">("edit")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [verifiedOwnerCode, setVerifiedOwnerCode] = useState("")
 
   const copyToClipboard = async () => {
     try {
@@ -76,65 +69,54 @@ export function ViewPaste({ paste }: ViewPasteProps) {
     }
   }
 
-  const handleEdit = () => {
-    // In a real app, check if user is premium
-    // For demo, we'll show the premium modal
-    setShowPremiumModal(true)
-    // If they were premium, we'd do:
-    // setIsEditing(true)
+  const handleEditClick = () => {
+    setModalAction("edit")
+    setShowOwnerModal(true)
   }
 
-  const handleDelete = () => {
-    // Remove the premium check and modal
-    // setShowPremiumModal(true);
-    // Instead, we'll just proceed with the delete confirmation
-    // The AlertDialog is already in the component, so we don't need to add anything else
+  const handleDeleteClick = () => {
+    setModalAction("delete")
+    setShowOwnerModal(true)
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    setError("")
-
-    try {
-      const result = await editPaste({
-        id: paste.id,
-        title: editedTitle,
-        content: editedContent,
-        language: editedLanguage,
-        theme: currentTheme,
-      })
-
-      if (result.success) {
-        setIsEditing(false)
-        // Refresh the page to show updated content
-        router.refresh()
-      } else {
-        setError(result.message || "Failed to save changes")
-      }
-    } catch (err) {
-      setError("An unexpected error occurred")
-    } finally {
-      setIsSaving(false)
+  const handleOwnerCodeConfirm = async (ownerCode: string) => {
+    if (modalAction === "edit") {
+      // Navigate to edit page with owner code
+      router.push(`/${paste.id}/edit?code=${encodeURIComponent(ownerCode)}`)
+    } else if (modalAction === "delete") {
+      // Store the verified code and show delete confirmation
+      setVerifiedOwnerCode(ownerCode)
+      setShowDeleteConfirm(true)
     }
   }
 
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true)
-    setError("")
-
+  const handleDeleteConfirm = async () => {
     try {
-      const result = await deletePaste(paste.id)
-
+      const result = await deleteSnippet(paste.id, verifiedOwnerCode)
+      
       if (result.success) {
-        // Redirect to home page
+        toast({
+          title: "Snippet deleted",
+          description: "Your snippet has been permanently deleted.",
+        })
         router.push("/")
       } else {
-        setError(result.message || "Failed to delete snippet")
+        toast({
+          title: "Error",
+          description: result.message || "Failed to delete snippet",
+          variant: "destructive",
+        })
       }
-    } catch (err) {
-      setError("An unexpected error occurred")
+    } catch (error) {
+      console.error("Delete error:", error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the snippet.",
+        variant: "destructive",
+      })
     } finally {
-      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+      setVerifiedOwnerCode("")
     }
   }
 
@@ -179,136 +161,54 @@ export function ViewPaste({ paste }: ViewPasteProps) {
         <div className="border-b border-gray-100 bg-gray-50 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              {isEditing ? (
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  placeholder="Untitled Snippet"
-                  className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
-                />
-              ) : (
-                <>
-                  <h1 className="text-xl font-semibold text-gray-900">{paste.title || "Untitled Snippet"}</h1>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Created {formatDistanceToNow(createdDate, { addSuffix: true })}
-                  </p>
-                </>
-              )}
+              <h1 className="text-xl font-semibold text-gray-900">{paste.title || "Untitled Snippet"}</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Created {formatDistanceToNow(createdDate, { addSuffix: true })}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {isEditing ? (
-                <Select value={editedLanguage} onValueChange={setEditedLanguage}>
-                  <SelectTrigger className="w-[180px] border-gray-200 bg-white">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <>
-                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">{paste.language}</Badge>
-                  {paste.viewLimit !== "unlimited" && (
-                    <Badge className="flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
-                      <Eye className="h-3 w-3" />
-                      {paste.viewCount} / {paste.viewLimit}
-                    </Badge>
-                  )}
-                  {expiresDate && (
-                    <Badge className="flex items-center gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(expiresDate, { addSuffix: true })}
-                    </Badge>
-                  )}
-                </>
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">{paste.language}</Badge>
+              {paste.viewLimit !== "unlimited" && (
+                <Badge className="flex items-center gap-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
+                  <Eye className="h-3 w-3" />
+                  {paste.viewCount} / {paste.viewLimit}
+                </Badge>
+              )}
+              {expiresDate && (
+                <Badge className="flex items-center gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200">
+                  <Clock className="h-3 w-3" />
+                  {formatDistanceToNow(expiresDate, { addSuffix: true })}
+                </Badge>
               )}
             </div>
           </div>
         </div>
+        
         <div>
           <div className="flex items-center justify-between gap-2 p-2 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center">
-              {!isEditing ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
-                    onClick={handleEdit}
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span className="hidden sm:inline">Edit</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center gap-1 text-gray-700 hover:text-red-700"
-                        onClick={handleDelete}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete this snippet. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleConfirmDelete}
-                          className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                        >
-                          {isDeleting ? "Deleting..." : "Delete"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-emerald-700"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <span className="animate-spin">⟳</span>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        <span>Save</span>
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-gray-700"
-                    onClick={() => setIsEditing(false)}
-                    disabled={isSaving}
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                </>
-              )}
-            </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1 text-gray-700 hover:text-emerald-700"
+                onClick={handleEditClick}
+              >
+                <Edit3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1 text-gray-700 hover:text-red-700"
+                onClick={handleDeleteClick}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Theme:</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -320,7 +220,7 @@ export function ViewPaste({ paste }: ViewPasteProps) {
                     <span>{getCurrentThemeLabel()}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="start">
                   {THEME_OPTIONS.map((theme) => (
                     <DropdownMenuItem
                       key={theme.value}
@@ -332,7 +232,7 @@ export function ViewPaste({ paste }: ViewPasteProps) {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-
+              
               <Button
                 variant="ghost"
                 size="sm"
@@ -345,40 +245,58 @@ export function ViewPaste({ paste }: ViewPasteProps) {
             </div>
           </div>
 
-          {error && (
-            <div className="p-2 bg-red-50 text-red-700 text-sm flex items-center">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              {error}
-            </div>
-          )}
-
           <div className="max-h-[600px] overflow-auto">
-            {isEditing ? (
-              <CodeEditor
-                value={editedContent}
-                onChange={setEditedContent}
-                language={editedLanguage}
-                theme={currentTheme}
-              />
-            ) : (
-              <SyntaxHighlighter
-                language={paste.language === "plaintext" ? "text" : paste.language}
-                style={getThemeStyle()}
-                showLineNumbers
-                customStyle={{
-                  margin: 0,
-                  borderRadius: 0,
-                  fontSize: "0.9rem",
-                }}
-              >
-                {paste.content}
-              </SyntaxHighlighter>
-            )}
+            <SyntaxHighlighter
+              language={paste.language === "plaintext" ? "text" : paste.language}
+              style={getThemeStyle()}
+              showLineNumbers
+              customStyle={{
+                margin: 0,
+                borderRadius: 0,
+                fontSize: "0.9rem",
+              }}
+            >
+              {paste.content}
+            </SyntaxHighlighter>
           </div>
         </div>
       </div>
 
-      <PremiumFeatureModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
+      {/* Owner Code Modal */}
+      <OwnerCodeModal
+        isOpen={showOwnerModal}
+        onClose={() => setShowOwnerModal(false)}
+        onConfirm={handleOwnerCodeConfirm}
+        title="Enter Owner Code"
+        description={
+          modalAction === "edit"
+            ? "Enter your owner code to edit this snippet."
+            : "Enter your owner code to delete this snippet."
+        }
+        confirmButtonText={modalAction === "edit" ? "Edit Snippet" : "Continue"}
+        isDestructive={modalAction === "delete"}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this snippet. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Snippet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
