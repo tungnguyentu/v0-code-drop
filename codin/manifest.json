@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Codin Snippet Creator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create and share code snippets directly from your browser",
   "action": {
     "default_popup": "popup.html",
