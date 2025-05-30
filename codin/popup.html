@@ -23,6 +23,13 @@
       </div>
     </div>
 
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button id="create-tab" class="tab-button active">Create</button>
+      <button id="manage-tab" class="tab-button">Manage</button>
+    </div>
+
+    <!-- Create Form Section -->
     <div id="create-form">
       <div class="form-group">
         <label for="title">Title (optional)</label>
@@ -110,6 +117,122 @@
       <button id="create-button" class="button">Create Snippet</button>
     </div>
 
+    <!-- Manage Snippets Section -->
+    <div id="manage-section" class="hidden">
+      <div class="form-group">
+        <label for="snippet-url">Snippet URL or ID</label>
+        <input type="text" id="snippet-url" placeholder="https://codin.site/abc123 or abc123">
+      </div>
+
+      <div class="form-group">
+        <label for="owner-code">Owner Code</label>
+        <input type="text" id="owner-code" placeholder="OWN-ABC123DEF456" maxlength="16">
+      </div>
+
+      <div class="button-group">
+        <button id="edit-btn" class="button secondary">Edit Snippet</button>
+        <button id="delete-btn" class="button danger">Delete Snippet</button>
+        <button id="view-btn" class="button outline">View Snippet</button>
+      </div>
+    </div>
+
+    <!-- Edit Form Section -->
+    <div id="edit-form" class="hidden">
+      <div class="form-header">
+        <h3>Edit Snippet</h3>
+        <button id="back-to-manage" class="button-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-title">Title (optional)</label>
+        <input type="text" id="edit-title" placeholder="Untitled Snippet">
+      </div>
+
+      <div class="form-group">
+        <label for="edit-content">Content</label>
+        <textarea id="edit-content" placeholder="Your code here..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-language">Language</label>
+          <select id="edit-language">
+            <option value="plaintext">Plain Text</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="csharp">C#</option>
+            <option value="cpp">C++</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="sql">SQL</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="edit-expiration">Expiration</label>
+          <select id="edit-expiration">
+            <option value="5m">5 minutes</option>
+            <option value="1h">1 hour</option>
+            <option value="1d">1 day</option>
+            <option value="1w">1 week</option>
+            <option value="never">Never</option>
+          </select>
+        </div>
+
+        <div class="form-group half">
+          <label for="edit-view-limit">View Limit</label>
+          <select id="edit-view-limit">
+            <option value="1">1 view</option>
+            <option value="5">5 views</option>
+            <option value="10">10 views</option>
+            <option value="unlimited">Unlimited</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="save-edit-btn" class="button">Save Changes</button>
+        <button id="cancel-edit-btn" class="button secondary">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Status Message Section -->
+    <div id="status-message" class="hidden">
+      <div class="status-content">
+        <div class="status-icon">
+          <svg id="status-success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon hidden">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <svg id="status-error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon hidden">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h3 id="status-title">Status</h3>
+        <p id="status-text">Operation completed.</p>
+        <button id="status-ok-btn" class="button">OK</button>
+      </div>
+    </div>
+
+    <!-- Result Section (for create) -->
     <div id="result" class="hidden">
       <div class="success-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
@@ -121,7 +244,7 @@
       <p>Your code snippet has been created successfully.</p>
       
       <div class="url-container">
-        <input type="text" id="snippet-url" readonly>
+        <input type="text" id="snippet-url-result" readonly>
         <button id="copy-url" class="button-icon">
           <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -131,6 +254,23 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </button>
+      </div>
+
+      <div id="owner-code-display" class="owner-code-section">
+        <h4>⚠️ Important - Save Your Owner Code</h4>
+        <div class="owner-code-container">
+          <input type="text" id="owner-code-result" readonly>
+          <button id="copy-owner-code" class="button-icon">
+            <svg id="copy-owner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <svg id="check-owner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon hidden">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+        <p class="warning-text">You need this code to edit or delete your snippet. Save it somewhere safe!</p>
       </div>
 
       <div id="password-notice" class="hidden">
@@ -146,11 +286,13 @@
       <button id="create-new" class="button">Create Another Snippet</button>
     </div>
 
+    <!-- Loading Section -->
     <div id="loading" class="hidden">
       <div class="spinner"></div>
-      <p>Creating snippet...</p>
+      <p id="loading-text">Creating snippet...</p>
     </div>
 
+    <!-- Error Section -->
     <div id="error" class="hidden">
       <div class="error-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
@@ -162,6 +304,18 @@
       <h3>Error</h3>
       <p id="error-message">Something went wrong. Please try again.</p>
       <button id="try-again" class="button">Try Again</button>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Delete Snippet</h3>
+        <p>Are you sure you want to delete this snippet? This action cannot be undone.</p>
+        <div class="modal-buttons">
+          <button id="confirm-delete" class="button danger">Delete</button>
+          <button id="cancel-delete" class="button secondary">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 

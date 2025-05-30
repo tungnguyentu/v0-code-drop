@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Codin Snippet Creator",
-  "version": "1.0.0",
-  "description": "Create and share code snippets directly from your browser",
+  "version": "1.1.0",
+  "description": "Create, edit, and manage code snippets directly from your browser",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -21,6 +21,9 @@
       "run_at": "document_end"
     }
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
