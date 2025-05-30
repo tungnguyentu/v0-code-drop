@@ -1,165 +1,100 @@
-# Codin Chrome Extension
+# CodeDrop Chrome Extension
 
-A powerful Chrome extension for creating, editing, and managing code snippets directly from your browser.
+## Installation for Development
+
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable "Developer mode" (toggle in the top right)
+3. Click "Load unpacked" 
+4. Select the `codin/` directory from this project
+5. The extension should now appear in your extensions list
+
+## Development Setup
+
+### API Configuration
+
+The extension is configured to use:
+- **Production API**: `https://codin.site/api/create` (active)
+- **Development API**: `http://localhost:3001/api/create` (commented out)
+
+To switch to development mode, edit `popup.js` and update the `API_URL` constant, and add `http://localhost:*` to the `host_permissions` in `manifest.json`.
+
+### Permissions
+
+The extension requires the following permissions:
+- `clipboardWrite`: To copy URLs and owner codes
+- `activeTab`: To access selected text from the current tab
+- `storage`: To save snippet history
+- `https://codin.site/*`: For production API access
 
 ## Features
 
-### ✨ Create Snippets
-- Create code snippets from selected text or manual input
-- Auto-detect programming language from file extensions
-- Set expiration times (5 minutes to never)
-- Configure view limits (1 view to unlimited)
-- Optional password protection
-- Support for 16+ programming languages
+- **Quick Snippet Creation**: Create snippets without visiting the website
+- **Selected Text Detection**: Automatically capture selected text from web pages
+- **Language Auto-detection**: Detect programming language based on file extensions
+- **All Snippet Options**: Support for expiration, view limits, password protection
+- **Owner Code Management**: Receive and securely store owner codes for editing/deleting snippets
+- **Persistent Owner Codes**: Owner codes are saved and accessible even after closing the extension
+- **Recent Snippet Access**: View recently created snippets (within 5 minutes) when reopening the extension
+- **History Tracking**: Keep track of recently created snippets with owner codes
 
-### 🔧 Manage Snippets
-- Edit existing snippets with owner code verification
-- Delete snippets permanently
-- Update expiration and view limit settings
-- Quick view snippets in new tabs
+## Debugging
 
-### 🔒 Security Features
-- Single owner code system (OWN-ABC123DEF456 format)
-- Secure bcrypt hashing for code storage
-- Two-step deletion confirmation
-- Owner code validation and formatting
+### Enable Console Logging
 
-## Installation
-
-1. Download the extension files
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension folder
-5. The Codin icon will appear in your toolbar
-
-## Usage
-
-### Creating a Snippet
-
-1. Click the Codin extension icon
-2. Make sure you're on the "Create" tab
-3. Fill in the form:
-   - **Title**: Optional title for your snippet
-   - **Content**: Your code or text (auto-filled if text is selected on page)
-   - **Language**: Programming language for syntax highlighting
-   - **Expiration**: When the snippet should expire
-   - **View Limit**: Maximum number of views allowed
-   - **Password**: Optional password protection
-4. Click "Create Snippet"
-5. **Important**: Copy and save your owner code! You'll need it to edit or delete the snippet
-
-### Managing Existing Snippets
-
-1. Click the Codin extension icon
-2. Switch to the "Manage" tab
-3. Enter the snippet URL or ID
-4. Enter your owner code (OWN-ABC123DEF456 format)
-5. Choose an action:
-   - **Edit**: Modify the snippet content and settings
-   - **Delete**: Permanently remove the snippet
-   - **View**: Open the snippet in a new tab
-
-### Editing a Snippet
-
-1. From the Manage tab, enter snippet details and click "Edit"
-2. Modify any of the following:
-   - Title and content
-   - Programming language
-   - Expiration time (calculated from current time)
-   - View limit (cannot be set below current view count)
-3. Click "Save Changes" to update
-
-### Security Notes
-
-- **Owner codes are not recoverable** - save them securely
-- Owner codes use format: `OWN-ABC123DEF456` (16 characters total)
-- All operations require valid owner code verification
-- Deletion requires confirmation to prevent accidents
-
-## Supported Languages
-
-- Plain Text
-- JavaScript
-- TypeScript
-- Python
-- Java
-- C#
-- C++
-- Go
-- Rust
-- PHP
-- Ruby
-- HTML
-- CSS
-- SQL
-- JSON
-- Markdown
-- Bash
-
-## Keyboard Shortcuts
-
-- The extension automatically detects and fills selected text from web pages
-- Language auto-detection based on file extensions
-- Owner code auto-formatting as you type
-
-## Troubleshooting
+1. Right-click the extension icon → "Inspect popup"
+2. Check the Console tab for debug messages
+3. The extension logs detailed information about API calls and responses
 
 ### Common Issues
 
-**Extension won't load snippets for editing:**
-- Verify the snippet URL/ID is correct
-- Ensure your owner code is exactly 16 characters (OWN-ABC123DEF456)
-- Check that the snippet hasn't expired
+1. **CORS Errors**: Make sure the development server is running on `localhost:3001`
+2. **Missing Owner Code**: Check console logs for API response details
+3. **Permission Denied**: Ensure all required permissions are granted in Chrome
 
-**Can't set view limit:**
-- New view limit must be higher than current view count
-- Use "Unlimited" if you need to remove restrictions
+### Testing
 
-**API errors:**
-- Check your internet connection
-- The extension will retry via background script if direct calls fail
-- Clear extension data in Chrome settings if persistent issues occur
+The extension can be tested by installing it and using it on any webpage. Check the console logs for detailed debugging information during snippet creation.
 
-### Error Messages
+## Usage
 
-- "Invalid owner code" - Check format and try again
-- "Snippet not found" - Verify URL/ID or snippet may have expired
-- "View limit too low" - Current views exceed the limit you're trying to set
+1. Select text on any webpage (optional)
+2. Click the CodeDrop extension icon
+3. Configure snippet settings
+4. Click "Create Snippet"
+5. **COPY THE OWNER CODE FIRST** - Look for the red "COPY FIRST!" badge
+6. Copy the snippet URL for sharing
 
-## Privacy
+### Important UX Notes
 
-- No data is stored locally except snippet history (last 50 snippets)
-- Owner codes are hashed on the server using bcrypt
-- Extension only communicates with codin.site API
-- No tracking or analytics in the extension
+- **Owner Code Persistence**: If you close the extension after creating a snippet, it will automatically show your recent snippet (within 5 minutes) when you reopen it
+- **Copy Priority**: Always copy the owner code before navigating away, as the red badge and glowing button indicate
+- **Recent Snippet Access**: The extension remembers your last created snippet for 5 minutes for easy access
+- **Clear Recent**: Use the "Clear Recent" button to start fresh and create a new snippet
 
-## Version History
+⚠️ **Important**: Save the owner code securely - it's required for editing or deleting the snippet. The extension now saves it temporarily for your convenience, but you should still copy it to a secure location.
 
-### v1.1.0
-- Added snippet management (edit/delete functionality)
-- Implemented owner code verification system
-- Added navigation tabs between Create and Manage modes
-- Enhanced security with confirmation dialogs
-- Improved error handling and user feedback
+### API Integration
 
-### v1.0.0
-- Initial release with snippet creation
-- Password protection support
-- Language auto-detection
-- Basic clipboard integration
+The extension communicates with the CodeDrop API and handles both response formats:
 
-## Support
+**New Format (local development):**
+```json
+{
+  "success": true,
+  "shortId": "ABC12345",
+  "ownerCode": "OWN-XXXXXXXXX"
+}
+```
 
-For issues or questions:
-1. Check this README for common solutions
-2. Verify your owner codes are saved correctly
-3. Try refreshing the extension or reloading it
-4. Report bugs through the Chrome Web Store or project repository
+**Legacy Format (production):**
+```json
+{
+  "success": true,
+  "shortId": {
+    "shortId": "ABC12345",
+    "ownerCode": "OWN-XXXXXXXXX"
+  }
+}
+```
 
-## Permissions
-
-The extension requires these permissions:
-- `activeTab`: To read selected text from web pages
-- `storage`: To save snippet history locally
-- `clipboardWrite`: To copy URLs and owner codes
-- `host_permissions`: To communicate with codin.site API 
+The extension automatically detects and handles both formats for maximum compatibility. 

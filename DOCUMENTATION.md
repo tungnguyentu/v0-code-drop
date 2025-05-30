@@ -207,6 +207,45 @@ The browser extension (`codin/` directory) allows users to:
 - Configure snippet options directly from the extension
 - Share snippet links easily
 
+## Chrome Extension
+
+CodeDrop includes a Chrome extension that allows users to create snippets directly from their browser.
+
+### Features
+
+- **Quick Snippet Creation**: Create snippets without visiting the website
+- **Selected Text Detection**: Automatically capture selected text from web pages
+- **Language Auto-detection**: Detect programming language based on file extensions
+- **All Snippet Options**: Support for expiration, view limits, password protection
+- **Owner Code Management**: Receive and securely store owner codes for editing/deleting snippets
+- **History Tracking**: Keep track of recently created snippets
+
+### Installation
+
+1. Navigate to the `codin/` directory
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the `codin/` folder
+
+### Usage
+
+1. Click the CodeDrop extension icon in Chrome
+2. The extension will automatically detect selected text on the current page
+3. Configure snippet options (title, language, expiration, etc.)
+4. Click "Create Snippet" 
+5. **Copy the Owner Code**: The extension displays both the snippet URL and owner code
+6. Keep the owner code secure - it's needed for editing or deleting the snippet
+
+### Owner Code Security
+
+⚠️ **Important**: The owner code is displayed only once after creation. Anyone with this code can edit or delete your snippet. Store it securely if you plan to modify the snippet later.
+
+### API Integration
+
+The extension communicates with the CodeDrop API at `https://codin.site/api/create` and receives:
+- `shortId`: The snippet identifier for the URL
+- `ownerCode`: The code needed for editing/deleting (format: `OWN-XXXXXXXXX`)
+
 ## Development Setup
 
 1. Clone the repository

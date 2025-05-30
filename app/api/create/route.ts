@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Create the paste using the existing server action
-    const shortId = await createPaste({
+    const result = await createPaste({
       title,
       content,
       language,
@@ -28,10 +28,17 @@ export async function POST(request: Request) {
       theme: "vs", // Default theme since it's not provided by the extension
     })
 
-    // Return the created paste ID
+    // Return the created paste ID and owner code
     return NextResponse.json({
       success: true,
-      shortId,
+      shortId: result.shortId,
+      ownerCode: result.ownerCode,
+    }, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
     })
   } catch (error) {
     console.error("Error creating snippet:", error)
@@ -41,7 +48,14 @@ export async function POST(request: Request) {
         success: false,
         message: error instanceof Error ? error.message : "An error occurred while creating the snippet",
       },
-      { status: 500 },
+      { 
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS", 
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      },
     )
   }
 }
