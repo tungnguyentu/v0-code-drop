@@ -61,7 +61,7 @@ Users can create code snippets with:
 - Password protection
 
 Upon creation, users receive a single owner code:
-- **Owner Code**: Full access for both editing and deleting (OWN-ABC123DEF format, 12 chars)
+- **Owner Code**: Full access for both editing and deleting (OWN-ABCDEFGHI format, 12 chars)
 
 Implementation: `components/paste-form.tsx` and `app/actions.ts`
 
@@ -81,7 +81,7 @@ Implementation: `components/view-paste.tsx` and `app/[id]/page.tsx`
 The application uses a simple code-based system for snippet ownership:
 
 #### Code Generation (`lib/owner-codes.ts`)
-- Generates a single owner code with OWN-ABC123DEF format
+- Generates a single owner code with OWN-ABCDEFGHI format
 - Uses bcrypt for secure storage in database
 - Validates code format and structure
 
@@ -170,7 +170,7 @@ Server-side functions for:
 ## Owner Code System
 
 ### Code Format
-- **Owner Code** (OWN-ABC123DEF): 12-character code providing full access to edit and delete
+- **Owner Code** (OWN-ABCDEFGHI): 12-character code providing full access to edit and delete
 
 ### Code Security
 - All codes are hashed before storage using bcrypt

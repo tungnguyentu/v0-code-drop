@@ -22,7 +22,7 @@ CodeDrop is a modern code snippet sharing platform with a simple owner-based man
 
 When you create a snippet, you receive a single owner code:
 
-- **🔑 Owner Code** (`OWN-ABC123DEF`): Full access to edit and delete your snippet
+- **🔑 Owner Code** (`OWN-ABCDEFGHI`): Full access to edit and delete your snippet
 
 **⚠️ Important**: Save this code securely! It is shown only once and cannot be recovered.
 

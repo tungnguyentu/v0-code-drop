@@ -2,11 +2,35 @@ import { nanoid } from "nanoid"
 import bcrypt from "bcryptjs"
 
 /**
+ * Generate a random alphabetic string of specified length
+ */
+function generateAlphabeticString(length: number): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += alphabet.charAt(Math.floor(Math.random() * alphabet.length))
+  }
+  return result
+}
+
+/**
+ * Generate a random alphanumeric string of specified length
+ */
+function generateAlphanumericString(length: number): string {
+  const alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += alphanumeric.charAt(Math.floor(Math.random() * alphanumeric.length))
+  }
+  return result
+}
+
+/**
  * Generate a secure owner code (12 characters)
- * Format: OWN-ABC123DEF456
+ * Format: OWN-ABCDEFGHI (only alphabetic characters)
  */
 export function generateOwnerCode(): string {
-  return `OWN-${nanoid(9).toUpperCase()}`
+  return `OWN-${generateAlphabeticString(9)}`
 }
 
 /**
@@ -14,7 +38,7 @@ export function generateOwnerCode(): string {
  * Format: EDIT-XXXXXX
  */
 export function generateEditCode(): string {
-  return `EDIT-${nanoid(6).toUpperCase()}`
+  return `EDIT-${generateAlphanumericString(6)}`
 }
 
 /**
@@ -22,7 +46,7 @@ export function generateEditCode(): string {
  * Format: DEL-XXXXXX
  */
 export function generateDeleteCode(): string {
-  return `DEL-${nanoid(6).toUpperCase()}`
+  return `DEL-${generateAlphanumericString(6)}`
 }
 
 /**
@@ -64,7 +88,7 @@ export function getCodeType(code: string): 'owner' | 'edit' | 'delete' | 'unknow
  * Validate owner code format
  */
 export function isValidOwnerCodeFormat(code: string): boolean {
-  const ownerPattern = /^OWN-[A-Z0-9]{9}$/
+  const ownerPattern = /^OWN-[A-Z]{9}$/
   return ownerPattern.test(code)
 }
 
@@ -72,7 +96,7 @@ export function isValidOwnerCodeFormat(code: string): boolean {
  * Validate code format
  */
 export function isValidCodeFormat(code: string): boolean {
-  const ownerPattern = /^OWN-[A-Z0-9]{9}$/
+  const ownerPattern = /^OWN-[A-Z]{9}$/
   const editPattern = /^EDIT-[A-Z0-9]{6}$/
   const deletePattern = /^DEL-[A-Z0-9]{6}$/
   

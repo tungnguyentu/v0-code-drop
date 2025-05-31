@@ -84,7 +84,7 @@ export function OwnerCodeModal({
             <Label htmlFor="owner-code">Owner Code</Label>
             <Input
               id="owner-code"
-              placeholder="OWN-ABC123DEF"
+              placeholder="OWN-ABCDEFGHI"
               value={ownerCode}
               onChange={(e) => setOwnerCode(e.target.value)}
               className="mt-1 font-mono"

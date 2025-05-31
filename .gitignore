@@ -25,3 +25,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+database-migration.sql
+rls-policies.sql
+rls-policies-essential.sql
